@@ -131,7 +131,10 @@
   const items = [
     { id:0, title:"耶穌",   img:"assets/StartPage/Button1.png" },
     { id:1, title:"親情",   img:"assets/StartPage/Button2.png" },
-    { id:2, title:"愛情",   img:"assets/StartPage/Button3.png" },
+    // { id:2, title:"愛情",   img:"assets/StartPage/Button3.png" },
+
+    { id:2, title:localStorage.getItem("user"),   img:"assets/StartPage/Button3.png" },
+
     { id:3, title:"禱告",   img:"assets/StartPage/Button4.png" },
     { id:4, title:"收藏",   img:"assets/StartPage/Collect.png" },
     { id:5, title:"小遊戲", img:"assets/StartPage/Button6.png" },
@@ -160,6 +163,9 @@
       // tile.onclick = () => alert("你點了：" + item.title);
 
       tile.onclick = () => {
+
+        localStorage.setItem("user", "蓋文");
+
         window.location.href = `biblePage.html?type=${item.id}`;
       };      
 
