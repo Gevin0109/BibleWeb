@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>經文輪播</title>
+
+<style>
+:root{
+  --yellow:#ffe93a;
+  --yellow2:#ffd400;
+  --homePink:#ff9acb;
+}
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",Arial,sans-serif;
+  background:#000;
+  overflow:hidden;
+}
+
+/* ================= 舞台：Grid（底部按鈕永遠可見） ================= */
+.stage{
+  position:relative;
+  width:100vw;
+  height:100svh;
+  height:100dvh;
+  display:grid;
+  grid-template-rows: 1fr auto; /* 上：內容區 / 下：按鈕區 */
+  align-items:stretch;
+}
+
+/* ================= 背景 ================= */
+.bg{
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+  transition:opacity .35s ease;
+  z-index:0;
+}
+.bg.fade{opacity:0}
+
+/* ================= 遮罩 ================= */
+.overlay{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:
+    radial-gradient(ellipse at 55% 25%, rgba(0,0,0,.2), rgba(0,0,0,.75)),
+    linear-gradient(to bottom, rgba(0,0,0,.2), rgba(0,0,0,.6));
+}
+
+/* ================= 內容區 ================= */
+.main{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:0;
+  padding: clamp(10px, 2.2vw, 24px);
+}
+
+/* ================= 文字 ================= */
+.content{
+  width:min(1100px,92%);
+  padding:clamp(14px,3vw,34px);
+  text-shadow:0 3px 0 rgba(0,0,0,.35),0 10px 22px rgba(0,0,0,.5);
+}
+.zh{
+  color:var(--yellow);
+  font-weight:800;
+  font-size:clamp(22px,3.2vw,44px);
+  line-height:1.3;
+  margin:0 0 18px 0;
+  white-space:pre-wrap;
+}
+.en{
+  color:var(--yellow2);
+  font-weight:800;
+  font-size:clamp(18px,2.6vw,38px);
+  line-height:1.25;
+  white-space:pre-wrap;
+  margin:0;
+}
+
+/* ================= 控制列：固定在底部（含 safe-area） ================= */
+.controlsWrap{
+  position:relative;
+  z-index:3;
+  display:flex;
+  justify-content:flex-end;
+  padding:
+    12px
+    14px
+    calc(12px + env(safe-area-inset-bottom))
+    14px;
+}
+.controls{
+  display:flex;
+  gap:14px;
+  align-items:center;
+}
+
+/* 收藏 */
+.fav{
+  width:200px;height:72px;
+  background:url("assets/Image/UI/fav_bg.png") center/contain no-repeat;
+  border:0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:900;
+  color:#fff;
+}
+.fav.active{color:#2a2400}
+
+/* 箭頭 */
+.navBtn{
+  width:60px;height:60px;
+  border-radius:18px;
+  border:0;
+  background:#ffb36a;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.arrow{
+  width:0;height:0;
+  border-top:14px solid transparent;
+  border-bottom:14px solid transparent;
+}
+.arrow.left{border-right:22px solid #8a4a12}
+.arrow.right{border-left:22px solid #8a4a12}
+
+/* Home */
+.home{
+  width:62px;height:62px;
+  border-radius:20px;
+  border:0;
+  background:radial-gradient(circle,#ffd0e6,var(--homePink));
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+}
+.homeIcon{
+  width:28px;height:28px;
+  background:#fff;
+  clip-path:polygon(
+    50% 5%,92% 40%,92% 95%,
+    62% 95%,62% 70%,38% 70%,
+    38% 95%,8% 95%,8% 40%
+  );
+}
+
+/* ================= 手機 ================= */
+@media (max-width:480px){
+  .controlsWrap{
+    padding:
+      10px
+      10px
+      calc(10px + env(safe-area-inset-bottom))
+      10px;
+  }
+  .controls{ gap:10px; }
+  .fav{width:140px;height:50px;font-size:16px}
+  .navBtn{width:44px;height:44px;border-radius:14px}
+  .home{width:46px;height:46px;border-radius:16px}
+  .arrow{
+    border-top-width:10px;
+    border-bottom-width:10px;
+  }
+  .arrow.left{border-right-width:16px}
+  .arrow.right{border-left-width:16px}
+}
+
+/* 超矮螢幕（橫拿）保險：避免文字把底部擠掉 */
+@media (max-height:560px){
+  .content{ padding: 10px 12px; }
+  .zh{ margin-bottom: 10px; }
+}
+</style>
+</head>
+
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="overlay"></div>
+
+  <div class="main">
+    <div class="content">
+      <p class="zh" id="zh">載入中…</p>
+      <p class="en" id="en"></p>
+    </div>
+  </div>
+
+  <div class="controlsWrap">
+    <div class="controls">
+      <button class="fav" id="favBtn" type="button">加入收藏</button>
+      <button class="navBtn" id="prevBtn" type="button" aria-label="上一則">
+        <div class="arrow left"></div>
+      </button>
+      <button class="navBtn" id="nextBtn" type="button" aria-label="下一則">
+        <div class="arrow right"></div>
+      </button>
+      <button class="home" id="homeBtn" type="button" aria-label="回首頁">
+        <div class="homeIcon"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= URL Type 篩選 ================= */
+const params = new URLSearchParams(location.search);
+const typeParam = params.get("type");
+const typeFilter = (typeParam !== null && !isNaN(typeParam)) ? Number(typeParam) : null;
+
+let allList = [];
+let viewList = [];
+let index = 0;
+
+const bgEl = document.getElementById("bg");
+const zhEl = document.getElementById("zh");
+const enEl = document.getElementById("en");
+
+const favBtn  = document.getElementById("favBtn");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const homeBtn = document.getElementById("homeBtn");
+
+const favKey = id => `verse_fav_${id}`;
+
+function safeBgPath(v){
+  if(v===undefined||v===null) return null;
+  v = String(v).trim();
+  if(!v) return null;
+  return /\.(png|jpg|jpeg|webp)$/i.test(v)
+    ? `assets/Image/${v}`
+    : `assets/Image/${v}.png`;
+}
+
+function applyFav(){
+  const d = viewList[index];
+  if(!d) return;
+  const on = localStorage.getItem(favKey(d.Id))==="1";
+  favBtn.classList.toggle("active", on);
+  favBtn.textContent = on ? "已收藏" : "加入收藏";
+}
+
+function showSlide(i){
+  if(!viewList.length) return;
+  index = (i + viewList.length) % viewList.length;
+  const d = viewList[index];
+
+  const bg = safeBgPath(d.BackImg);
+  bgEl.classList.add("fade");
+  setTimeout(()=>{
+    bgEl.style.backgroundImage = bg ? `url("${bg}")` : "";
+    bgEl.classList.remove("fade");
+  },150);
+
+  zhEl.textContent = `${d.ContentText}\n${d.Chapter}`;
+  enEl.textContent = `${d.ContentTextE}\n${d.ChapterE}`;
+  applyFav();
+}
+
+/* ================= 按鈕 ================= */
+prevBtn.onclick = () => showSlide(index - 1);
+nextBtn.onclick = () => showSlide(index + 1);
+
+homeBtn.onclick = () => {
+  location.href = "index.html";
+};
+
+favBtn.onclick = () => {
+  const d = viewList[index];
+  if(!d) return;
+  const k = favKey(d.Id);
+  localStorage.setItem(k, localStorage.getItem(k)==="1" ? "0" : "1");
+  applyFav();
+};
+
+/* ================= 載入資料（防呆：避免 HTML 當 JSON） ================= */
+async function loadBibleData(){
+  const url = "assets/JsonData/BibleData.json"; // 需要時可改成 "/assets/JsonData/BibleData.json"
+  const r = await fetch(url, { cache: "no-store" });
+
+  if(!r.ok){
+    // 404/500 等狀態
+    throw new Error(`HTTP ${r.status}：找不到或無法取得 JSON（${url}）`);
+  }
+
+  const ct = (r.headers.get("content-type") || "").toLowerCase();
+
+  // 有些主機不會回 application/json，但至少不能是 text/html
+  if(ct.includes("text/html")){
+    const html = await r.text();
+    throw new Error(
+      "回傳的是 HTML（不是 JSON）。通常代表路徑 404、被導回首頁、或登入頁。\n" +
+      "前 200 字：\n" + html.slice(0,200)
+    );
+  }
+
+  // 若 content-type 很怪，也先用 text 檢查開頭是不是 "<"
+  const raw = await r.text();
+  const head = raw.trim().slice(0,20);
+
+  if(head.startsWith("<")){
+    throw new Error(
+      "拿到的內容看起來是 HTML（開頭是 < ），不是 JSON。\n" +
+      "前 200 字：\n" + raw.trim().slice(0,200)
+    );
+  }
+
+  // 正式解析 JSON
+  return JSON.parse(raw);
+}
+
+loadBibleData()
+  .then(data => {
+    allList = data;
+    viewList = (typeFilter===null)
+      ? allList
+      : allList.filter(x => Number(x.Type) === typeFilter);
+
+    if(!viewList.length){
+      zhEl.textContent = `此分類無資料 (Type=${typeFilter})`;
+      enEl.textContent = "";
+      return;
+    }
+    showSlide(0);
+  })
+  .catch(e => {
+    zhEl.textContent = "資料載入失敗";
+    enEl.textContent = e.message || String(e);
+    console.error(e);
+  });
+</script>
+</body>
+</html>

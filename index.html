@@ -1,12 +1,173 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <title>BibleWeb</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>首頁選單</title>
+
+  <style>
+    :root{
+      --text:#2b2b2b;
+      --shadow: 0 14px 30px rgba(0,0,0,.25);
+      --shadow2: 0 8px 18px rgba(0,0,0,.25);
+
+      /* 🟡 按鈕底色（偏黃） */
+      --btn1:#e9dfb6;
+      --btn2:#ece3bc;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color:var(--text);
+
+      background-image: url("assets/StartPage/Back.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+
+      min-height:100vh;
+    }
+
+    .stage{
+      min-height:100vh;
+      padding:32px; /* 桌機預設 */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .panel{
+      width:min(1120px, 100%);
+    }
+
+    /* ✅ 桌機：固定 4 欄 */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:32px;
+      justify-items:center;
+    }
+
+    .tile{
+      width:100%;
+      max-width:190px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+      cursor:pointer;
+    }
+
+    .icon{
+      width:192px;
+      height:192px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+
+      background: radial-gradient(circle at top, var(--btn1), var(--btn2));
+      box-shadow: var(--shadow);
+      transition: transform .18s, box-shadow .18s;
+      overflow:hidden; /* 若 PNG 有內建白圓，可裁掉邊緣 */
+    }
+
+    .icon img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      pointer-events:none;
+    }
+
+    .label{
+      font-size:24px;
+      font-weight:800;
+      white-space:nowrap;
+      color:#222;
+      text-shadow: 0 1px 3px rgba(255,255,255,.6);
+    }
+
+    .tile:hover .icon{
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: var(--shadow2);
+    }
+
+    /* ✅ 平板：固定 3 欄 (<=1024px) */
+    @media (max-width: 1024px){
+      .stage{ padding:20px; }
+      .grid{
+        grid-template-columns: repeat(3, 1fr);
+        gap:20px;
+      }
+      .tile{ max-width:180px; gap:10px; }
+      .icon{ width:150px; height:150px; }
+      .label{ font-size:20px; }
+    }
+
+    /* ✅ 手機：固定 2 欄 (<=640px) */
+    @media (max-width: 640px){
+      .stage{ padding:16px; }
+      .grid{
+        grid-template-columns: repeat(2, 1fr);
+        gap:12px;          /* 上下左右間距更緊 */
+      }
+      .tile{ max-width:170px; gap:6px; }
+      .icon{ width:96px; height:96px; }
+      .label{ font-size:16px; }
+    }
+  </style>
 </head>
+
 <body>
-  <h1>BibleWeb 上線成功 🙌</h1>
-  <p>GitHub Pages HTTPS 正常</p>
+  <main class="stage">
+    <section class="panel">
+      <div class="grid" id="grid"></div>
+    </section>
+  </main>
+
+  <script>
+  const items = [
+    { id:0, title:"耶穌",   img:"assets/StartPage/Button1.png" },
+    { id:1, title:"親情",   img:"assets/StartPage/Button2.png" },
+    { id:2, title:"愛情",   img:"assets/StartPage/Button3.png" },
+    { id:3, title:"禱告",   img:"assets/StartPage/Button4.png" },
+    { id:4, title:"收藏",   img:"assets/StartPage/Collect.png" },
+    { id:5, title:"小遊戲", img:"assets/StartPage/Button6.png" },
+    { id:6, title:"查經",   img:"assets/StartPage/FindButton.png" },
+    { id:7, title:"寶石&勳章", img:"assets/StartPage/Medal.png" },
+  ];
+
+    const grid = document.getElementById("grid");
+
+    function makeTile(item){
+      const tile = document.createElement("div");
+      tile.className = "tile";
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+
+      const img = document.createElement("img");
+      img.src = item.img;
+      img.alt = item.title;
+      icon.appendChild(img);
+
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = item.title;
+
+      // tile.onclick = () => alert("你點了：" + item.title);
+
+      tile.onclick = () => {
+        window.location.href = `biblePage.html?type=${item.id}`;
+      };      
+
+      tile.append(icon, label);
+      return tile;
+    }
+
+    items.forEach(i => grid.appendChild(makeTile(i)));
+  </script>
 </body>
 </html>

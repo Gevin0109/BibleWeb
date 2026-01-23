@@ -1,0 +1,52 @@
+[
+  {
+    "Id": 10001,
+    "BackImg": 10001,
+    "Type": 0,
+    "TypeName": "耶穌",
+    "Chapter": "馬 可 福 音 10:27",
+    "ChapterE": "Mark 10:27",
+    "ContentText": "耶 穌 看 著 他 們 ， 說 ： 在 人 是 不 能 ， 在 神 卻 不 然 ， 因 為 神 凡 事 都 能 。",
+    "ContentTextE": "Jesus looked at them and said, With man this is impossible, but not with God; all things are possible with God."
+  },
+  {
+    "Id": 10002,
+    "BackImg": 10002,
+    "Type": 1,
+    "TypeName": "親情",
+    "Chapter": "歌 羅 西 書 3:14",
+    "ChapterE": "Colossians 3:14",
+    "ContentText": "在 這 一 切 之 外 ， 要 存 著 愛 心 ， 愛 心 就 是 聯 絡 全 德 的 。",
+    "ContentTextE": "And over all these virtues put on love, which binds them all together in perfect unity."
+  },
+  {
+    "Id": 10003,
+    "BackImg": 10003,
+    "Type": 1,
+    "TypeName": "親情",
+    "Chapter": "以 弗 所 書 4:2",
+    "ChapterE": "Ephesians 4:2",
+    "ContentText": "凡 事 謙 虛 、 溫 柔 、 忍 耐 ， 用 愛 心 互 相 寬 容 。",
+    "ContentTextE": "Be completely humble and gentle; be patient, bearing with one another in love."
+  },
+  {
+    "Id": 10004,
+    "BackImg": 10001,
+    "Type": 2,
+    "TypeName": "愛情",
+    "Chapter": "彼 得 前 書 4:8",
+    "ChapterE": "First Peter 4:8",
+    "ContentText": "最 要 緊 的 是 彼 此 切 實 相 愛 ， 因 為 愛 能 遮 掩 許 多 的 罪 。",
+    "ContentTextE": "Above all, love each other deeply, because love covers over a multitude of sins."
+  },
+  {
+    "Id": 10005,
+    "BackImg": 10002,
+    "Type": 3,
+    "TypeName": "禱告",
+    "Chapter": "腓 立 比 書 4:6",
+    "ChapterE": "Philippians 4:6",
+    "ContentText": "應 當 一 無 罣 慮 ， 只 要 凡 事 藉 著 禱 告 、 祈 求 ， 和 感 謝 ， 將 你 們 所 要 的 告 訴 神 。",
+    "ContentTextE": "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God."
+  }
+]
