@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>養羊：點擊羊跳經文彈窗＋固定+4EXP｜可拖曳移動｜全螢幕</title>
+<title>養羊：點擊羊跳經文彈窗＋固定+4EXP｜可拖曳移動｜全螢幕（localStorage 存檔）</title>
 <style>
   :root{
     /* ✅ 背景圖：改成你的路徑 */
@@ -12,6 +12,10 @@
     --bg1:#f7fbff; --bg2:#eaf3ff;
     --card:#ffffffcc; --text:#1b1e24;
     --shadow:0 18px 40px rgba(0,0,0,.12);
+
+    /* ✅ 收藏按鈕：用你的圖（請改成你的檔案路徑） */
+    --favOff: url("assets/Image/fav_bg.png"); /* 未收藏 */
+    --favOn:  url("assets/Image/fav_bg.png");  /* 已收藏 */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -112,17 +116,8 @@
     font-weight:900;
   }
 
-  /* ✅ 經文加大（你要的） */
-    .verseZh{
-    font-size:32px;
-    line-height:1;   /* ✅ 更緊 */
-    letter-spacing:.3px;
-    }
-
-    .verseEn{
-    font-size:22px;
-    line-height:1;   /* ✅ 更緊 */
-    }
+  .verseZh{ font-size:32px; line-height:1; letter-spacing:.3px; }
+  .verseEn{ font-size:22px; line-height:1; }
   .ref{
     display:block;
     margin-top:10px;
@@ -158,24 +153,66 @@
     box-shadow:0 10px 22px rgba(0,0,0,.25);
   }
 
+  /* ✅ 收藏按鈕：底圖 + 文字顯示 */
   .favBtn{
     margin-top:12px;
-    padding:14px 26px;
-    font-size:18px;
-    border-radius:14px;
-    border:2px solid #c8ff3a;
-    background:linear-gradient(#b8ff3a,#8bdc00);
-    font-weight:900;
-    cursor:pointer;
+    width:170px;
+    height:74px;
+    border:none;
+    border-radius:16px;
+    padding:0;
+    background: transparent;
+    background-image: var(--favOff);
+    background-size: cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
     box-shadow:0 12px 26px rgba(0,0,0,.22);
+    cursor:pointer;
+    transition: transform .12s ease, filter .12s ease;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+  }
+  .favBtn:hover{ transform: translateY(-1px); }
+  .favBtn:active{ transform: translateY(0); filter: brightness(.96); }
+
+  .favBtn.isOn{ background-image: var(--favOn); }
+
+  .favBtn .t1{
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:.5px;
+    color:#ffffff;
+    text-shadow:0 3px 10px rgba(0,0,0,.85);
+    line-height:1.05;
+  }
+  .favBtn .t2{
+    font-size:13px;
+    font-weight:900;
+    color:#ffffff;
+    opacity:.95;
+    text-shadow:0 3px 10px rgba(0,0,0,.85);
+    line-height:1.05;
   }
 
-  /* ✅ 手機再自動縮一點，避免爆版 */
+  .favBtn.isOn .t1,
+  .favBtn.isOn .t2{
+    color:#ffe95c;
+  }
+
   @media (max-width: 520px){
     .verseZh{ font-size:26px; }
     .verseEn{ font-size:18px; }
     .ref{ font-size:16px; }
     .typeTag{ font-size:14px; padding:7px 12px; }
+
+    .favBtn{ width:156px; height:68px; border-radius:14px; }
+    .favBtn .t1{ font-size:16px; }
+    .favBtn .t2{ font-size:12px; }
   }
 </style>
 </head>
@@ -185,6 +222,7 @@
   <div class="hud">
     <div class="hudInner">
       <button id="btnAdd" type="button">＋ 羊</button>
+      <button id="btnClear" type="button">🗑 清除資料</button>
     </div>
   </div>
   <canvas id="cv"></canvas>
@@ -209,7 +247,11 @@
       <span class="ref" id="refEn">—</span>
     </div>
 
-    <button class="favBtn" type="button">加入收藏<br/>Add to favorites</button>
+    <!-- ✅ 收藏按鈕：底圖 + 顯示文字 -->
+    <button class="favBtn" id="favBtn" type="button" aria-pressed="false" title="加入收藏 / 取消收藏">
+      <div class="t1">加入收藏</div>
+      <div class="t2">Add to favorites</div>
+    </button>
   </div>
 </div>
 
@@ -229,6 +271,7 @@
   const canvas = document.getElementById("cv");
   const ctx = canvas.getContext("2d", { alpha:true });
   const btnAdd = document.getElementById("btnAdd");
+  const btnClear = document.getElementById("btnClear");
 
   const UI_CLEARANCE = 14;
   const UI_CARD_H = 44;
@@ -628,6 +671,66 @@
   let nextId = 1;
   const sheeps = [];
 
+  // ===== localStorage：存/讀/清 =====
+  const SHEEP_STORE_KEY = "sheeps_v1";
+
+  function saveSheeps(){
+    try{
+      const data = sheeps.map(s => ({
+        id: s.id,
+        x: s.x,
+        y: s.y,
+        color: s.color,
+        level: s.level,
+        exp: s.exp,
+        needExp: s.needExp
+      }));
+      localStorage.setItem(SHEEP_STORE_KEY, JSON.stringify(data));
+    }catch(err){
+      console.error("saveSheeps failed", err);
+    }
+  }
+
+  function loadSheeps(){
+    try{
+      const raw = localStorage.getItem(SHEEP_STORE_KEY);
+      if(!raw) return false;
+
+      const arr = JSON.parse(raw);
+      if(!Array.isArray(arr) || arr.length === 0) return false;
+
+      sheeps.length = 0;
+      nextId = 1;
+
+      for(const d of arr){
+        if(!d) continue;
+        const s = new Sheep(d.id ?? nextId, d.x ?? 200, d.y ?? 200, d.color ?? "#ffffff");
+        s.level = Math.max(1, (d.level|0) || 1);
+        s.exp = Math.max(0, (d.exp|0) || 0);
+        s.needExp = Math.max(1, (d.needExp|0) || s.calcNeedExp(s.level));
+        sheeps.push(s);
+        nextId = Math.max(nextId, (s.id|0) + 1);
+      }
+
+      separateAll();
+      return true;
+    }catch(err){
+      console.error("loadSheeps failed", err);
+      return false;
+    }
+  }
+
+  function clearAllSheeps(){
+    if(!confirm("確定要清除所有羊的資料嗎？（位置/等級/經驗值/顏色都會清掉）")) return;
+    localStorage.removeItem(SHEEP_STORE_KEY);
+    sheeps.length = 0;
+    spawnInitial();
+    separateAll();
+    saveSheeps();
+  }
+
+  btnClear.addEventListener("click", clearAllSheeps);
+
   function spawnInitial(){
     sheeps.length = 0;
     const topSafe = Math.max(getTopSafeMin(), 150);
@@ -636,8 +739,13 @@
       new Sheep(nextId++, WORLD_W*0.50, topSafe + 190, palette[1]),
       new Sheep(nextId++, WORLD_W*0.72, topSafe + 140, palette[2]),
     );
+    saveSheeps();
   }
-  spawnInitial();
+
+  // ✅ 優先讀檔，沒有才生成初始
+  if(!loadSheeps()){
+    spawnInitial();
+  }
 
   function separateAll(){
     for(let k=0;k<2;k++){
@@ -658,6 +766,7 @@
     }
     sheeps.forEach(s => s.update(0));
   }
+
   separateAll();
 
   function drawBg(){
@@ -691,6 +800,37 @@
   const refZh = document.getElementById("refZh");
   const refEn = document.getElementById("refEn");
 
+  // ✅ 收藏按鈕
+  const favBtn = document.getElementById("favBtn");
+  let currentVerse = null;
+
+  const FAV_KEY = "sheepFavVerses_v1";
+  function readFavSet(){
+    try{
+      const raw = localStorage.getItem(FAV_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    }catch{
+      return new Set();
+    }
+  }
+  function writeFavSet(set){
+    localStorage.setItem(FAV_KEY, JSON.stringify(Array.from(set)));
+  }
+  function getVerseId(v){
+    return v?.Id ?? v?.ID ?? v?.id ?? null;
+  }
+  function isFav(v){
+    const id = getVerseId(v);
+    if(id == null) return false;
+    return readFavSet().has(String(id));
+  }
+  function setFavUI(on){
+    favBtn.classList.toggle("isOn", !!on);
+    favBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    favBtn.title = on ? "已收藏（點擊取消）" : "加入收藏";
+  }
+
   async function loadVersesOnce(){
     if(verseList) return verseList;
     try{
@@ -705,8 +845,8 @@
       console.error(err);
       verseList = [];
       verseTypeTag.textContent = "載入失敗";
-      verseZh.firstChild && (verseZh.firstChild.textContent = "（經文載入失敗）");
-      verseEn.firstChild && (verseEn.firstChild.textContent = "(Failed to load)");
+      verseZh.childNodes[0] && (verseZh.childNodes[0].textContent = "（經文載入失敗）");
+      verseEn.childNodes[0] && (verseEn.childNodes[0].textContent = "(Failed to load)");
       refZh.textContent = "請確認 BibleData.json 為合法 JSON（不要有註解/逗號錯誤）";
       refEn.textContent = "Check JSON validity (no comments / trailing commas).";
       return verseList;
@@ -715,38 +855,34 @@
 
   function pickRandomVerse(){
     if(!verseList || verseList.length === 0) return null;
-    const i = (Math.random() * verseList.length) | 0;
-    return verseList[i];
+    return verseList[(Math.random()*verseList.length)|0];
   }
 
   function renderVerse(v){
     if(!v) return;
+    currentVerse = v;
 
-    // 類別
     const typeText = (v.TypeName != null) ? `分類：${v.TypeName}` : "經文";
     verseTypeTag.textContent = typeText;
 
-    // 內容
     const zhText = (v.ContentText || "").trim() || "（無中文內容）";
     const enText = (v.ContentTextE || "").trim() || "(No English content)";
 
-    // 章節
     const zhRef = (v.Chapter || "").trim() || "—";
     const enRef = (v.ChapterE || "").trim() || "—";
 
-    // 寫入（保留 ref 在 span 裡）
     verseZh.childNodes[0].textContent = zhText + " ";
     verseEn.childNodes[0].textContent = enText + " ";
 
     refZh.textContent = zhRef;
     refEn.textContent = enRef;
+
+    setFavUI(isFav(currentVerse));
   }
 
   async function showVerseOverlayRandom(){
     await loadVersesOnce();
-    const v = pickRandomVerse();
-    renderVerse(v);
-
+    renderVerse(pickRandomVerse());
     verseOverlay.classList.remove("hidden");
     verseOverlay.setAttribute("aria-hidden", "false");
   }
@@ -757,100 +893,98 @@
   verseClose.addEventListener("click", hideVerseOverlay);
   verseBg.addEventListener("click", hideVerseOverlay);
 
+  favBtn.addEventListener("click", () => {
+    if(!currentVerse) return;
+    const id = getVerseId(currentVerse);
+    if(id == null){
+      alert("這筆經文沒有 Id，無法加入收藏（請在 BibleData.json 補 Id 欄位）。");
+      return;
+    }
+    const sid = String(id);
+    const set = readFavSet();
+    const nowOn = !set.has(sid);
+    if(nowOn) set.add(sid);
+    else set.delete(sid);
+    writeFavSet(set);
+    setFavUI(nowOn);
+  });
+
   // ====== 互動：點一下加 EXP、拖曳移動 ======
-  let dragSheep = null;
-  let dragPointerId = null;
-  let dragMoved = false;
-  let dragOffX = 0, dragOffY = 0;
+  let dragSheep=null, dragPointerId=null, dragMoved=false, dragOffX=0, dragOffY=0;
 
   function pickSheepAt(p){
-    let best = null, bestD = Infinity;
+    let best=null, bestD=Infinity;
     for(const s of sheeps){
-      const r = s.getHitRadius();
-      const d = Math.hypot(p.x - s.x, p.y - s.y);
-      if(d <= r && d < bestD){
-        bestD = d;
-        best = s;
-      }
+      const r=s.getHitRadius();
+      const d=Math.hypot(p.x-s.x, p.y-s.y);
+      if(d<=r && d<bestD){ bestD=d; best=s; }
     }
     return best;
   }
 
-  // ✅ 點擊羊：固定 +4 EXP，並跳出隨機經文
   function gainExpIfTap(s){
     s.gainExp(4);
+    saveSheeps();              // ✅ 存檔
     showVerseOverlayRandom();
   }
 
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     if(!allLoaded()) return;
-
     if(!verseOverlay.classList.contains("hidden")) return;
 
     const p = screenToWorld(e.clientX, e.clientY);
     const s = pickSheepAt(p);
     if(!s) return;
 
-    dragSheep = s;
-    dragPointerId = e.pointerId;
-    dragMoved = false;
-
-    s.dragging = true;
-    dragOffX = p.x - s.x;
-    dragOffY = p.y - s.y;
+    dragSheep=s; dragPointerId=e.pointerId; dragMoved=false;
+    s.dragging=true;
+    dragOffX=p.x-s.x; dragOffY=p.y-s.y;
 
     canvas.setPointerCapture?.(e.pointerId);
   }, {passive:false});
 
   canvas.addEventListener("pointermove", (e) => {
-    if(dragPointerId !== e.pointerId || !dragSheep) return;
+    if(dragPointerId!==e.pointerId || !dragSheep) return;
     e.preventDefault();
 
-    const p = screenToWorld(e.clientX, e.clientY);
-    const nx = p.x - dragOffX;
-    const ny = p.y - dragOffY;
+    const p=screenToWorld(e.clientX,e.clientY);
+    const nx=p.x-dragOffX, ny=p.y-dragOffY;
 
     if(!dragMoved){
-      const dx = nx - dragSheep.x;
-      const dy = ny - dragSheep.y;
-      if(Math.hypot(dx,dy) > 4) dragMoved = true;
+      const dx=nx-dragSheep.x, dy=ny-dragSheep.y;
+      if(Math.hypot(dx,dy)>4) dragMoved=true;
     }
 
-    dragSheep.x = nx;
-    dragSheep.y = ny;
+    dragSheep.x=nx; dragSheep.y=ny;
     dragSheep.clampIntoWorld();
   }, {passive:false});
 
   function endDragOrTap(){
     if(!dragSheep) return;
+    const s=dragSheep;
+    s.dragging=false;
 
-    const s = dragSheep;
-    s.dragging = false;
-
-    if(!dragMoved){
-      gainExpIfTap(s);
-    }else{
-      s.state = "walk";
-      s.dir = (Math.random()*4)|0;
-      s.decisionTimer = 0.4 + Math.random()*0.8;
+    if(!dragMoved) gainExpIfTap(s);
+    else{
+      s.state="walk";
+      s.dir=(Math.random()*4)|0;
+      s.decisionTimer=0.4+Math.random()*0.8;
+      saveSheeps();            // ✅ 位置改了要存
     }
 
-    dragSheep = null;
-    dragPointerId = null;
-    dragMoved = false;
-
+    dragSheep=null; dragPointerId=null; dragMoved=false;
     separateAll();
   }
 
   canvas.addEventListener("pointerup", (e) => {
-    if(dragPointerId !== e.pointerId) return;
+    if(dragPointerId!==e.pointerId) return;
     e.preventDefault();
     endDragOrTap();
   }, {passive:false});
 
   canvas.addEventListener("pointercancel", (e) => {
-    if(dragPointerId !== e.pointerId) return;
+    if(dragPointerId!==e.pointerId) return;
     endDragOrTap();
   });
 
@@ -870,16 +1004,16 @@
 
     sheeps.push(s);
     separateAll();
+    saveSheeps();              // ✅ 新增後存
   };
 
   // ====== 主迴圈 ======
-  let last = performance.now();
+  let last=performance.now();
   function loop(now){
-    const dt = Math.min(0.033, (now - last)/1000);
-    last = now;
+    const dt=Math.min(0.033, (now-last)/1000);
+    last=now;
 
     resizeCanvasAndWorld();
-
     for(const s of sheeps) s.update(dt);
 
     drawBg();
@@ -890,8 +1024,6 @@
 
   requestAnimationFrame(loop);
   loadFromDefaultPath();
-
-  // ✅ 預載經文（加快第一次點擊顯示速度）
   loadVersesOnce();
 })();
 </script>
