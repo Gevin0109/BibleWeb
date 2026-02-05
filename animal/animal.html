@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>養羊：點擊羊跳經文彈窗＋固定+4EXP｜可拖曳移動｜全螢幕</title>
+<style>
+  :root{
+    /* ✅ 背景圖：改成你的路徑 */
+    --bgImg: url("assets/Image/back.png");
+
+    --bg1:#f7fbff; --bg2:#eaf3ff;
+    --card:#ffffffcc; --text:#1b1e24;
+    --shadow:0 18px 40px rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    color:var(--text);
+    background: radial-gradient(1200px 600px at 30% 20%, var(--bg1), var(--bg2));
+    overflow:hidden;
+    touch-action:none;
+    position:relative;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background-image: var(--bgImg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform: translateZ(0);
+  }
+
+  .stage{ position:fixed; inset:0; }
+
+  .hud{
+    position:absolute;
+    left:12px; right:12px; top:12px;
+    padding-top: env(safe-area-inset-top);
+    display:flex;
+    justify-content:flex-end;
+    z-index:10;
+    pointer-events:none;
+  }
+  .hudInner{
+    pointer-events:auto;
+    display:flex; gap:10px;
+    padding:10px 12px;
+    background:var(--card);
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  button{
+    appearance:none;
+    border:1px solid rgba(0,0,0,.12);
+    background:#fff;
+    border-radius:12px;
+    padding:8px 12px;
+    cursor:pointer;
+    box-shadow:0 10px 22px rgba(0,0,0,.08);
+    transition:transform .12s ease, box-shadow .12s ease;
+    font-weight:900;
+  }
+  button:hover{transform:translateY(-1px)}
+  button:active{transform:translateY(0); box-shadow:0 6px 14px rgba(0,0,0,.10)}
+
+  canvas{
+    position:absolute;
+    inset:0;
+    width:100vw;
+    height:100svh;
+    height:100dvh;
+    display:block;
+    background: transparent;
+    touch-action:none;
+  }
+
+  /* ===== 📖 經文 Overlay ===== */
+  .overlay{
+    position:fixed;
+    inset:0;
+    z-index:999;
+  }
+  .hidden{ display:none; }
+
+  .overlayBg{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.45);
+  }
+
+  .overlayCard{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:24px;
+    text-align:center;
+    color:#ffe95c;
+    font-weight:900;
+  }
+
+  /* ✅ 經文加大（你要的） */
+    .verseZh{
+    font-size:32px;
+    line-height:1;   /* ✅ 更緊 */
+    letter-spacing:.3px;
+    }
+
+    .verseEn{
+    font-size:22px;
+    line-height:1;   /* ✅ 更緊 */
+    }
+  .ref{
+    display:block;
+    margin-top:10px;
+    font-size:18px;
+    color:#ffffff;
+    opacity:.92;
+    text-shadow:0 3px 10px rgba(0,0,0,.7);
+  }
+  .typeTag{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 14px;
+    border-radius:999px;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.18);
+    color:#fff7b8;
+    font-size:16px;
+    text-shadow:0 2px 8px rgba(0,0,0,.55);
+  }
+
+  .closeBtn{
+    position:absolute;
+    top:20px;
+    right:20px;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    border:none;
+    font-size:28px;
+    font-weight:900;
+    cursor:pointer;
+    box-shadow:0 10px 22px rgba(0,0,0,.25);
+  }
+
+  .favBtn{
+    margin-top:12px;
+    padding:14px 26px;
+    font-size:18px;
+    border-radius:14px;
+    border:2px solid #c8ff3a;
+    background:linear-gradient(#b8ff3a,#8bdc00);
+    font-weight:900;
+    cursor:pointer;
+    box-shadow:0 12px 26px rgba(0,0,0,.22);
+  }
+
+  /* ✅ 手機再自動縮一點，避免爆版 */
+  @media (max-width: 520px){
+    .verseZh{ font-size:26px; }
+    .verseEn{ font-size:18px; }
+    .ref{ font-size:16px; }
+    .typeTag{ font-size:14px; padding:7px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="hud">
+    <div class="hudInner">
+      <button id="btnAdd" type="button">＋ 羊</button>
+    </div>
+  </div>
+  <canvas id="cv"></canvas>
+</div>
+
+<!-- 📖 經文彈窗（點羊會跳出） -->
+<div id="verseOverlay" class="overlay hidden" aria-hidden="true">
+  <div class="overlayBg" id="verseBg"></div>
+
+  <div class="overlayCard">
+    <button class="closeBtn" id="verseClose" type="button">✕</button>
+
+    <div class="typeTag" id="verseTypeTag">載入中…</div>
+
+    <div class="verseZh" id="verseZh">
+      （經文載入中）
+      <span class="ref" id="refZh">—</span>
+    </div>
+
+    <div class="verseEn" id="verseEn">
+      (Loading…)
+      <span class="ref" id="refEn">—</span>
+    </div>
+
+    <button class="favBtn" type="button">加入收藏<br/>Add to favorites</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ====== 世界大小：跟著螢幕（CSS 像素） ======
+  let WORLD_W = 0;
+  let WORLD_H = 0;
+
+  const BASE_W = 960;
+  const BASE_H = 580;
+  let SHEEP_SCALE = 1;
+  let UI_SCALE = 1;
+
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+  const canvas = document.getElementById("cv");
+  const ctx = canvas.getContext("2d", { alpha:true });
+  const btnAdd = document.getElementById("btnAdd");
+
+  const UI_CLEARANCE = 14;
+  const UI_CARD_H = 44;
+
+  function resizeCanvasAndWorld(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    const pxW = Math.max(1, Math.round(rect.width * dpr));
+    const pxH = Math.max(1, Math.round(rect.height * dpr));
+
+    if(canvas.width !== pxW || canvas.height !== pxH){
+      canvas.width = pxW;
+      canvas.height = pxH;
+    }
+
+    WORLD_W = rect.width;
+    WORLD_H = rect.height;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    SHEEP_SCALE = clamp(Math.min(WORLD_W / BASE_W, WORLD_H / BASE_H), 0.55, 1.0);
+    UI_SCALE = clamp(WORLD_W / 520, 0.72, 1.0);
+  }
+  window.addEventListener("resize", () => requestAnimationFrame(resizeCanvasAndWorld));
+  resizeCanvasAndWorld();
+
+  function getTopSafeMin(){
+    const hudRect = document.querySelector(".hudInner").getBoundingClientRect();
+    const hudH = hudRect.height || 54;
+    return hudH + 12 + UI_CARD_H + UI_CLEARANCE + 6;
+  }
+
+  const DIRS = [
+    { key:"down",  vx: 0, vy: 1 },
+    { key:"left",  vx:-1, vy: 0 },
+    { key:"right", vx: 1, vy: 0 },
+    { key:"up",    vx: 0, vy:-1 },
+  ];
+
+  // ====== 16 張圖（assets/pet/down_0.png ~ up_3.png）======
+  const sprites = Array.from({length:4}, () => Array.from({length:4}, () => null));
+  function allLoaded(){
+    for(let d=0; d<4; d++) for(let f=0; f<4; f++) if(!sprites[d][f]) return false;
+    return true;
+  }
+  function loadImage(url){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("load fail: " + url));
+      img.src = url;
+    });
+  }
+  async function loadFromDefaultPath(){
+    const base = "assets/pet/";
+    const tasks = [];
+    for(let d=0; d<4; d++){
+      for(let f=0; f<4; f++){
+        const url = `${base}${DIRS[d].key}_${f}.png`;
+        tasks.push(loadImage(url).then(img => sprites[d][f] = img));
+      }
+    }
+    try{
+      await Promise.all(tasks);
+      tintCache.clear();
+      sheeps.forEach(s => s.update(0));
+    }catch(err){
+      alert("載入失敗：\n" + err.message + "\n\n請確認 assets/pet/ 內檔名 down_0.png ~ up_3.png 是否正確。");
+      console.error(err);
+    }
+  }
+
+  // ====== 變色（乾淨簍空） ======
+  const tintCache = new Map();
+  function getTintedSprite(img, color, key){
+    if(!color || color.toLowerCase() === "#ffffff") return img;
+    if(tintCache.has(key)) return tintCache.get(key);
+
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+
+    g.clearRect(0,0,w,h);
+    g.globalCompositeOperation = "source-over";
+    g.globalAlpha = 1;
+    g.drawImage(img,0,0);
+
+    g.globalCompositeOperation = "multiply";
+    g.globalAlpha = 1;
+    g.fillStyle = color;
+    g.fillRect(0,0,w,h);
+
+    g.globalCompositeOperation = "screen";
+    g.globalAlpha = 0.22;
+    g.drawImage(img,0,0);
+
+    g.globalCompositeOperation = "destination-in";
+    g.globalAlpha = 1;
+    g.drawImage(img,0,0);
+
+    g.globalCompositeOperation = "source-over";
+    tintCache.set(key, c);
+    return c;
+  }
+
+  function roundRect(g, x, y, w, h, r){
+    r = Math.min(r, w/2, h/2);
+    g.beginPath();
+    g.moveTo(x+r, y);
+    g.arcTo(x+w, y, x+w, y+h, r);
+    g.arcTo(x+w, y+h, x, y+h, r);
+    g.arcTo(x, y+h, x, y, r);
+    g.arcTo(x, y, x+w, y, r);
+    g.closePath();
+  }
+  function outlinedText(g, text, x, y, align="center", size=14, weight=900){
+    g.save();
+    g.font = `${weight} ${size}px system-ui`;
+    g.textAlign = align;
+    g.textBaseline = "middle";
+    g.lineWidth = 4;
+    g.strokeStyle = "rgba(255,255,255,.95)";
+    g.strokeText(text, x, y);
+    g.fillStyle = "rgba(20,24,30,.92)";
+    g.fillText(text, x, y);
+    g.restore();
+  }
+
+  class Sheep{
+    constructor(id, x, y, color){
+      this.id = id;
+      this.x = x; this.y = y;
+      this.dir = (Math.random()*4)|0;
+      this.frame = 0;
+
+      this.baseSpeed = 60 + Math.random()*26;
+      this.state = "walk";
+      this.animTimer = 0;
+      this.decisionTimer = 0;
+
+      this.level = 1;
+      this.exp = 0;
+      this.needExp = this.calcNeedExp(this.level);
+
+      this.baseScale = 1.00;
+      this.levelScaleStep = 0.07;
+      this.popScale = 0;
+
+      this.color = color;
+      this.floatTexts = [];
+
+      this.dragging = false;
+
+      this.choose();
+    }
+
+    calcNeedExp(lv){
+      return Math.round(10 + (lv-1)*4 + (lv-1)*(lv-1)*0.8);
+    }
+
+    getScale(){
+      const base = this.baseScale + (this.level-1)*this.levelScaleStep + this.popScale;
+      return base * SHEEP_SCALE;
+    }
+
+    getHalfSize(){
+      const base = sprites[this.dir][this.frame];
+      if(!base) return {hx:48, hy:48};
+      const iw = (base.naturalWidth || base.width);
+      const ih = (base.naturalHeight || base.height);
+      const sc = this.getScale();
+      return { hx:(iw*sc)/2, hy:(ih*sc)/2 };
+    }
+
+    getUIBox(){
+      const {hy} = this.getHalfSize();
+      const topY = this.y - hy;
+      let uiTop = topY - UI_CLEARANCE - UI_CARD_H;
+      let uiBottom = uiTop + UI_CARD_H;
+
+      if(uiTop < 10){
+        uiTop = 10;
+        uiBottom = uiTop + UI_CARD_H;
+      }
+      return { top: uiTop, bottom: uiBottom };
+    }
+
+    choose(){
+      const walk = Math.random() < 0.72;
+      this.state = walk ? "walk" : "idle";
+      if(walk || Math.random() < 0.35) this.dir = (Math.random()*4)|0;
+      this.decisionTimer = 0.6 + Math.random()*1.4;
+    }
+
+    gainExp(amount){
+      this.exp += amount;
+      this.popScale = Math.min(0.18, this.popScale + 0.08);
+      this.floatTexts.push({ text:`+${amount} EXP`, x:this.x, y:this.y - 44, vy:-30, t:0.9 });
+
+      while(this.exp >= this.needExp){
+        this.exp -= this.needExp;
+        this.level++;
+        this.needExp = this.calcNeedExp(this.level);
+        this.floatTexts.push({ text:`Lv UP! → ${this.level}`, x:this.x, y:this.y - 70, vy:-40, t:1.1 });
+        this.popScale = Math.min(0.28, this.popScale + 0.14);
+      }
+    }
+
+    clampIntoWorld(){
+      const {hx, hy} = this.getHalfSize();
+
+      if(this.x < hx) this.x = hx;
+      if(this.x > WORLD_W - hx) this.x = WORLD_W - hx;
+      if(this.y > WORLD_H - hy) this.y = WORLD_H - hy;
+
+      const topSafe = Math.max(getTopSafeMin(), UI_CARD_H + UI_CLEARANCE + 16);
+      const uiBox = this.getUIBox();
+
+      if(uiBox.top < 10){
+        this.y += (10 - uiBox.top);
+      }
+      if(this.y < topSafe){
+        this.y = topSafe;
+      }
+    }
+
+    update(dt){
+      this.popScale = Math.max(0, this.popScale - dt * 0.55);
+
+      for(const ft of this.floatTexts){
+        ft.t -= dt;
+        ft.y += ft.vy * dt;
+      }
+      this.floatTexts = this.floatTexts.filter(ft => ft.t > 0);
+
+      if(this.dragging){
+        this.frame = 0;
+        this.animTimer = 0;
+        this.clampIntoWorld();
+        return;
+      }
+
+      this.decisionTimer -= dt;
+      if(this.decisionTimer <= 0) this.choose();
+
+      if(this.state === "walk"){
+        const d = DIRS[this.dir];
+        this.x += d.vx * this.baseSpeed * dt;
+        this.y += d.vy * this.baseSpeed * dt;
+
+        if(allLoaded()){
+          this.animTimer += dt;
+          const frameDur = 1/10;
+          while(this.animTimer >= frameDur){
+            this.animTimer -= frameDur;
+            this.frame = (this.frame + 1) % 4;
+          }
+        }else{
+          this.frame = 0; this.animTimer = 0;
+        }
+      }else{
+        this.frame = 0; this.animTimer = 0;
+      }
+
+      const {hx, hy} = this.getHalfSize();
+
+      if(this.x < hx){ this.x = hx; this.dir = 2; this.state="walk"; }
+      if(this.x > WORLD_W - hx){ this.x = WORLD_W - hx; this.dir = 1; this.state="walk"; }
+      if(this.y > WORLD_H - hy){ this.y = WORLD_H - hy; this.dir = 3; this.state="walk"; }
+
+      this.clampIntoWorld();
+      const topSafe = Math.max(getTopSafeMin(), UI_CARD_H + UI_CLEARANCE + 16);
+      if(this.y <= topSafe + 1){ this.dir = 0; this.state="walk"; }
+    }
+
+    getHitRadius(){
+      const {hx, hy} = this.getHalfSize();
+      return Math.max(hx, hy) * 0.92;
+    }
+
+    getUIAnchor(){
+      const uiBox = this.getUIBox();
+      return { x: this.x, y: (uiBox.top + uiBox.bottom)/2 };
+    }
+
+    draw(){
+      if(!allLoaded()) return;
+      const base = sprites[this.dir][this.frame];
+      if(!base) return;
+
+      const key = `${this.color}|${this.dir}|${this.frame}`;
+      const img = getTintedSprite(base, this.color, key);
+
+      const iw = (img.naturalWidth || img.width);
+      const ih = (img.naturalHeight || img.height);
+      const sc = this.getScale();
+      const dw = iw * sc;
+      const dh = ih * sc;
+
+      ctx.drawImage(img, this.x - dw/2, this.y - dh/2, dw, dh);
+      this.drawFollowUI();
+      this.drawFloatTexts();
+    }
+
+    drawFollowUI(){
+      const {x, y} = this.getUIAnchor();
+
+      const cardW = Math.round(184 * UI_SCALE);
+      const cardH = UI_CARD_H;
+
+      const barW  = Math.round(150 * UI_SCALE);
+      const barH  = Math.max(9, Math.round(12 * UI_SCALE));
+
+      const lvY  = y - Math.round(12 * UI_SCALE);
+      const barY = y;
+      const expY = y + Math.round(14 * UI_SCALE);
+
+      const cardX = x - cardW/2;
+      const cardY = y - cardH/2;
+
+      ctx.save();
+      ctx.globalAlpha = 0.96;
+
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#000";
+      roundRect(ctx, cardX, cardY + 3, cardW, cardH, 12);
+      ctx.fill();
+      ctx.restore();
+
+      roundRect(ctx, cardX, cardY, cardW, cardH, 12);
+      ctx.fillStyle = "rgba(255,255,255,.88)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,.10)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      roundRect(ctx, cardX + 8, cardY + 8, 10, 10, 5);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,.12)";
+      ctx.stroke();
+
+      outlinedText(ctx, `Lv ${this.level}`, x, lvY, "center", Math.round(14 * UI_SCALE), 900);
+
+      const bx = x - barW/2;
+      roundRect(ctx, bx, barY - barH/2, barW, barH, 999);
+      ctx.fillStyle = "rgba(20,24,30,.12)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,.10)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      const p = Math.max(0, Math.min(1, this.exp / this.needExp));
+      const fillW = Math.max(0, (barW - 4) * p);
+      roundRect(ctx, bx + 2, barY - barH/2 + 2, fillW, barH - 4, 999);
+      ctx.fillStyle = "rgba(35,110,220,.85)";
+      ctx.fill();
+
+      ctx.save();
+      ctx.font = `700 ${Math.round(12 * UI_SCALE)}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(20,24,30,.80)";
+      ctx.fillText(`${this.exp}/${this.needExp}`, x, expY);
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    drawFloatTexts(){
+      if(this.floatTexts.length === 0) return;
+
+      ctx.save();
+      ctx.font = "800 14px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for(const ft of this.floatTexts){
+        const alpha = Math.max(0, Math.min(1, ft.t / 0.9));
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgba(255,255,255,.92)";
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillStyle = "rgba(20,24,30,.92)";
+        ctx.fillText(ft.text, ft.x, ft.y);
+      }
+      ctx.restore();
+    }
+  }
+
+  const palette = ["#ffffff", "#d9b38c", "#bfc9d6", "#c7e7b3", "#f1c0cf", "#d8d0ff"];
+  let nextId = 1;
+  const sheeps = [];
+
+  function spawnInitial(){
+    sheeps.length = 0;
+    const topSafe = Math.max(getTopSafeMin(), 150);
+    sheeps.push(
+      new Sheep(nextId++, WORLD_W*0.28, topSafe + 120, palette[0]),
+      new Sheep(nextId++, WORLD_W*0.50, topSafe + 190, palette[1]),
+      new Sheep(nextId++, WORLD_W*0.72, topSafe + 140, palette[2]),
+    );
+  }
+  spawnInitial();
+
+  function separateAll(){
+    for(let k=0;k<2;k++){
+      for(let i=0;i<sheeps.length;i++){
+        for(let j=i+1;j<sheeps.length;j++){
+          const a=sheeps[i], b=sheeps[j];
+          const dx=b.x-a.x, dy=b.y-a.y;
+          const dist=Math.hypot(dx,dy) || 1;
+
+          const minDist = (a.getHitRadius() + b.getHitRadius()) * 0.55;
+          if(dist < minDist){
+            const push=(minDist-dist)/2;
+            b.x += (dx/dist)*push; b.y += (dy/dist)*push;
+            a.x -= (dx/dist)*push; a.y -= (dy/dist)*push;
+          }
+        }
+      }
+    }
+    sheeps.forEach(s => s.update(0));
+  }
+  separateAll();
+
+  function drawBg(){
+    ctx.clearRect(0,0,WORLD_W,WORLD_H);
+
+    if(!allLoaded()){
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.55)";
+      ctx.font = "600 14px system-ui";
+      ctx.fillText("載入中…（assets/pet/ down_0.png ~ up_3.png）", 18, 28);
+      ctx.restore();
+    }
+  }
+
+  function screenToWorld(clientX, clientY){
+    const rect = canvas.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  // ===== 📖 經文：讀 JSON + 隨機顯示 =====
+  const VERSE_JSON_URL = "../assets/JsonData/BibleData.json";
+  let verseList = null;
+
+  const verseOverlay = document.getElementById("verseOverlay");
+  const verseClose = document.getElementById("verseClose");
+  const verseBg = document.getElementById("verseBg");
+
+  const verseTypeTag = document.getElementById("verseTypeTag");
+  const verseZh = document.getElementById("verseZh");
+  const verseEn = document.getElementById("verseEn");
+  const refZh = document.getElementById("refZh");
+  const refEn = document.getElementById("refEn");
+
+  async function loadVersesOnce(){
+    if(verseList) return verseList;
+    try{
+      const res = await fetch(VERSE_JSON_URL, { cache: "no-store" });
+      if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      const data = await res.json();
+      if(!Array.isArray(data)) throw new Error("JSON 最外層不是陣列 []");
+      verseList = data.filter(v => v && (v.ContentText || v.ContentTextE || v.Chapter || v.ChapterE));
+      if(verseList.length === 0) throw new Error("JSON 陣列是空的，或沒有可顯示欄位");
+      return verseList;
+    }catch(err){
+      console.error(err);
+      verseList = [];
+      verseTypeTag.textContent = "載入失敗";
+      verseZh.firstChild && (verseZh.firstChild.textContent = "（經文載入失敗）");
+      verseEn.firstChild && (verseEn.firstChild.textContent = "(Failed to load)");
+      refZh.textContent = "請確認 BibleData.json 為合法 JSON（不要有註解/逗號錯誤）";
+      refEn.textContent = "Check JSON validity (no comments / trailing commas).";
+      return verseList;
+    }
+  }
+
+  function pickRandomVerse(){
+    if(!verseList || verseList.length === 0) return null;
+    const i = (Math.random() * verseList.length) | 0;
+    return verseList[i];
+  }
+
+  function renderVerse(v){
+    if(!v) return;
+
+    // 類別
+    const typeText = (v.TypeName != null) ? `分類：${v.TypeName}` : "經文";
+    verseTypeTag.textContent = typeText;
+
+    // 內容
+    const zhText = (v.ContentText || "").trim() || "（無中文內容）";
+    const enText = (v.ContentTextE || "").trim() || "(No English content)";
+
+    // 章節
+    const zhRef = (v.Chapter || "").trim() || "—";
+    const enRef = (v.ChapterE || "").trim() || "—";
+
+    // 寫入（保留 ref 在 span 裡）
+    verseZh.childNodes[0].textContent = zhText + " ";
+    verseEn.childNodes[0].textContent = enText + " ";
+
+    refZh.textContent = zhRef;
+    refEn.textContent = enRef;
+  }
+
+  async function showVerseOverlayRandom(){
+    await loadVersesOnce();
+    const v = pickRandomVerse();
+    renderVerse(v);
+
+    verseOverlay.classList.remove("hidden");
+    verseOverlay.setAttribute("aria-hidden", "false");
+  }
+  function hideVerseOverlay(){
+    verseOverlay.classList.add("hidden");
+    verseOverlay.setAttribute("aria-hidden", "true");
+  }
+  verseClose.addEventListener("click", hideVerseOverlay);
+  verseBg.addEventListener("click", hideVerseOverlay);
+
+  // ====== 互動：點一下加 EXP、拖曳移動 ======
+  let dragSheep = null;
+  let dragPointerId = null;
+  let dragMoved = false;
+  let dragOffX = 0, dragOffY = 0;
+
+  function pickSheepAt(p){
+    let best = null, bestD = Infinity;
+    for(const s of sheeps){
+      const r = s.getHitRadius();
+      const d = Math.hypot(p.x - s.x, p.y - s.y);
+      if(d <= r && d < bestD){
+        bestD = d;
+        best = s;
+      }
+    }
+    return best;
+  }
+
+  // ✅ 點擊羊：固定 +4 EXP，並跳出隨機經文
+  function gainExpIfTap(s){
+    s.gainExp(4);
+    showVerseOverlayRandom();
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if(!allLoaded()) return;
+
+    if(!verseOverlay.classList.contains("hidden")) return;
+
+    const p = screenToWorld(e.clientX, e.clientY);
+    const s = pickSheepAt(p);
+    if(!s) return;
+
+    dragSheep = s;
+    dragPointerId = e.pointerId;
+    dragMoved = false;
+
+    s.dragging = true;
+    dragOffX = p.x - s.x;
+    dragOffY = p.y - s.y;
+
+    canvas.setPointerCapture?.(e.pointerId);
+  }, {passive:false});
+
+  canvas.addEventListener("pointermove", (e) => {
+    if(dragPointerId !== e.pointerId || !dragSheep) return;
+    e.preventDefault();
+
+    const p = screenToWorld(e.clientX, e.clientY);
+    const nx = p.x - dragOffX;
+    const ny = p.y - dragOffY;
+
+    if(!dragMoved){
+      const dx = nx - dragSheep.x;
+      const dy = ny - dragSheep.y;
+      if(Math.hypot(dx,dy) > 4) dragMoved = true;
+    }
+
+    dragSheep.x = nx;
+    dragSheep.y = ny;
+    dragSheep.clampIntoWorld();
+  }, {passive:false});
+
+  function endDragOrTap(){
+    if(!dragSheep) return;
+
+    const s = dragSheep;
+    s.dragging = false;
+
+    if(!dragMoved){
+      gainExpIfTap(s);
+    }else{
+      s.state = "walk";
+      s.dir = (Math.random()*4)|0;
+      s.decisionTimer = 0.4 + Math.random()*0.8;
+    }
+
+    dragSheep = null;
+    dragPointerId = null;
+    dragMoved = false;
+
+    separateAll();
+  }
+
+  canvas.addEventListener("pointerup", (e) => {
+    if(dragPointerId !== e.pointerId) return;
+    e.preventDefault();
+    endDragOrTap();
+  }, {passive:false});
+
+  canvas.addEventListener("pointercancel", (e) => {
+    if(dragPointerId !== e.pointerId) return;
+    endDragOrTap();
+  });
+
+  // ====== 按鈕：新增羊 ======
+  btnAdd.onclick = () => {
+    if(!allLoaded()) return;
+
+    const color = palette[(nextId-1) % palette.length];
+    const topSafe = Math.max(getTopSafeMin(), 150);
+
+    const x = WORLD_W * (0.22 + Math.random()*0.56);
+    const y = topSafe + 120 + Math.random()*Math.max(40, (WORLD_H - topSafe - 220));
+
+    const s = new Sheep(nextId++, x, y, color);
+    s.popScale = 0.22;
+    s.floatTexts.push({ text:`NEW! 羊 #${s.id}`, x:s.x, y:s.y - 66, vy:-40, t:1.1 });
+
+    sheeps.push(s);
+    separateAll();
+  };
+
+  // ====== 主迴圈 ======
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now - last)/1000);
+    last = now;
+
+    resizeCanvasAndWorld();
+
+    for(const s of sheeps) s.update(dt);
+
+    drawBg();
+    [...sheeps].sort((a,b)=>a.y-b.y).forEach(s => s.draw());
+
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+  loadFromDefaultPath();
+
+  // ✅ 預載經文（加快第一次點擊顯示速度）
+  loadVersesOnce();
+})();
+</script>
+
+</body>
+</html>
