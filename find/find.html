@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>離線查經（CUV + KJV）</title>
+<title>查經</title>
 <style>
   :root{
     --pageBgImg: url("assets/Image/collectBack.png");
@@ -26,6 +26,10 @@
 
     --favBtnBg: rgba(0,0,0,.42);
     --favBtnStroke: rgba(255,255,255,.22);
+
+    /* ✅ 箭頭按鈕 */
+    --navBtnBg: rgba(0,0,0,.30);
+    --navBtnStroke: rgba(255,255,255,.18);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -54,7 +58,6 @@
     align-items:center;
     gap:10px;
   }
-
   .homeBtn, .favTopBtn{
     display:inline-flex;
     align-items:center;
@@ -93,8 +96,6 @@
     transform: rotate(-45deg);
     border-radius:2px;
   }
-
-  /* 收藏 icon（小書籤） */
   .favIcon{
     width:16px;height:18px;
     border:2px solid rgba(255,255,255,.92);
@@ -113,7 +114,6 @@
     margin:auto;
     width:0;
   }
-
   .favTopBtn[disabled]{
     opacity:.55;
     cursor:not-allowed;
@@ -160,7 +160,6 @@
   }
   option{ background:#0b1f3a; color:#fff; }
 
-  /* 章/節 select 寬一點比較好用 */
   #chapter,#verse{ min-width:92px; }
 
   .lblEn{
@@ -186,7 +185,6 @@
     white-space:pre-wrap;
   }
 
-  /* ✅ 英文：字色跟中文一樣（黃色） */
   .verseEn{
     margin:0 0 8px;
     font-size:clamp(16px,2.2vw,24px);
@@ -378,7 +376,59 @@
     color:rgba(255,255,255,.9);
   }
 
-  /* ✅ 手機：章/節並排（同一排） */
+  /* ✅ 章/節控制列：PC版維持原樣（不動），箭頭仍在「節」旁 */
+  .cvHalf.verseRow{
+    align-items:center;
+    justify-content:flex-start;
+  }
+  .verseNavRow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:nowrap;
+  }
+  .navInline{
+    display:flex;
+    gap:6px;
+    align-items:center;
+    flex:0 0 auto;
+  }
+  .navBtnInline{
+    width:42px;height:42px;
+    border-radius:12px;
+    border:2px solid var(--navBtnStroke);
+    background:var(--navBtnBg);
+    color:#fff;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    user-select:none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .navBtnInline:active{ transform: translateY(1px); }
+  .navBtnInline[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
+
+  .arrow{
+    width:0;height:0;
+    border-top:9px solid transparent;
+    border-bottom:9px solid transparent;
+  }
+  .arrow.left{ border-right:14px solid rgba(255,255,255,.92); margin-left:-2px; }
+  .arrow.right{ border-left:14px solid rgba(255,255,255,.92); margin-right:-2px; }
+
+  .navHint{
+    font-size:20px;
+    font-weight:1000;
+    opacity:.78;
+    white-space:nowrap;
+    letter-spacing:.2px;
+  }
+
+  /* ✅ 預設：手機專用箭頭隱藏（PC版看不到） */
+  .navMobile{ display:none; }
+
+  /* ✅ 手機：章/節並排 */
   @media (max-width:640px){
     .grp.cvRow{
       width:100%;
@@ -407,7 +457,39 @@
       opacity:.85;
       white-space:nowrap;
     }
-    .lblEn{ display:none; } /* 手機更乾淨：英文標籤先隱藏 */
+    .lblEn{ display:none; }
+
+    /* ✅ 手機：節旁邊的箭頭「隱藏」 */
+    .verseRow .navInline,
+    .verseRow .navHint{
+      display:none !important;
+    }
+
+    /* ✅ 手機：把約旁的手機專用箭頭顯示 */
+    .navMobile{
+      display:flex !important;
+      align-items:center;
+      gap:6px;
+      flex-wrap:nowrap;
+      margin-left:6px;
+    }
+    .navBtnInline{ width:40px;height:40px; }
+    .arrow.left{ border-right-width:12px; }
+    .arrow.right{ border-left-width:12px; }
+
+    /* ✅ 讓紅框文字變成兩行，置中顯示 */
+    .navHint.mobileHint{
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      line-height:1.05;
+      text-align:center;
+      font-size:11px;
+      opacity:.90;
+      white-space:normal; /* 允許換行 */
+      letter-spacing:.2px;
+      margin-left:2px;
+    }
   }
 
   @media (max-width:520px){
@@ -415,12 +497,18 @@
     .controls{ gap:8px; }
     .topBtns{ gap:8px; }
     .homeBtn,.favTopBtn{ padding:9px 10px; border-radius:13px; }
+
+    /* ✅ 原本這裡會把手機提示隱藏：拿掉，改成更小字 */
+    .navHint.mobileHint{
+      display:flex;
+      font-size:15px;
+      opacity:.92;
+    }
   }
 </style>
 </head>
 <body>
 
-<!-- ✅ 回首頁 + 加入收藏 右上角 -->
 <div class="topBtns">
   <button class="homeBtn" id="homeBtn" type="button" title="回首頁">
     <span class="homeIcon" aria-hidden="true"></span>
@@ -433,17 +521,30 @@
   </button>
 </div>
 
-<h1>離線查經（和合本 + KJV）</h1>
+<h1></h1>
 
 <div class="panel">
   <div class="controls">
 
+    <!-- ✅ 手機版：把箭頭放「選約」旁邊並排（加文字） -->
     <div class="grp">
       <span>約</span>
       <select id="testament">
         <option value="OT">舊約</option>
         <option value="NT" selected>新約</option>
       </select>
+
+      <div class="navMobile" aria-label="切換上下節（手機）">
+        <button class="navBtnInline" type="button" id="prevBtnM" title="上一節">
+          <span class="arrow left" aria-hidden="true"></span>
+        </button>
+        <button class="navBtnInline" type="button" id="nextBtnM" title="下一節">
+          <span class="arrow right" aria-hidden="true"></span>
+        </button>
+
+        <!-- ✅ 這裡改成「切換<br>上下節」 -->
+        <span class="navHint mobileHint">切換<br>上下節</span>
+      </div>
     </div>
 
     <div class="grp">
@@ -457,7 +558,6 @@
       </div>
     </div>
 
-    <!-- ✅ 手機：章/節並排（章/節加英文標籤） -->
     <div class="grp cvRow">
       <div class="cvHalf">
         <span>章</span><span class="lblEn">Chapter</span>
@@ -466,18 +566,31 @@
         <span id="maxCh">—</span>
       </div>
 
-      <div class="cvHalf">
-        <span>節</span><span class="lblEn">Verse</span>
-        <select id="verse"></select>
-        <span class="sep">/</span>
-        <span id="maxV">—</span>
+      <!-- ✅ PC版不動：維持原本「節旁邊有箭頭＋提示」 -->
+      <div class="cvHalf verseRow">
+        <div class="verseNavRow">
+          <span>節</span><span class="lblEn">Verse</span>
+          <select id="verse"></select>
+          <span class="sep">/</span>
+          <span id="maxV">—</span>
+
+          <div class="navInline" aria-label="切換上下節">
+            <button class="navBtnInline" type="button" id="prevBtn" title="上一節">
+              <span class="arrow left" aria-hidden="true"></span>
+            </button>
+            <button class="navBtnInline" type="button" id="nextBtn" title="下一節">
+              <span class="arrow right" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <span class="navHint">切換上下節</span>
+        </div>
       </div>
     </div>
+
   </div>
 
   <div class="meta" id="metaLine">（正在載入離線聖經資料…）</div>
-
-  <!-- ✅ 中英文並存 -->
   <div class="verseZh" id="zh"></div>
   <div class="verseEn" id="en"></div>
 </div>
@@ -540,6 +653,12 @@ const bookListEl = document.getElementById("bookList");
 const bookSearchEl = document.getElementById("bookSearch");
 const bookCloseBtn = document.getElementById("bookClose");
 
+/* ✅ PC箭頭 + 手機箭頭（同功能） */
+const btnPrev = document.getElementById("prevBtn");
+const btnNext = document.getElementById("nextBtn");
+const btnPrevM = document.getElementById("prevBtnM");
+const btnNextM = document.getElementById("nextBtnM");
+
 /* 回首頁 */
 document.getElementById("homeBtn").addEventListener("click", () => {
   location.href = "../index.html";
@@ -562,8 +681,8 @@ let BOOK_MAP = new Map();
 let BOOK_VERSE_TOTAL = new Map();
 
 /* ========== KJV data ========== */
-let KJV_INDEX = new Map();      // "bookNum/ch:v" -> text
-let KJV_BOOKNAME = new Map();   // bookNum -> "Genesis"
+let KJV_INDEX = new Map();
+let KJV_BOOKNAME = new Map();
 let KJV_READY = false;
 
 /* Canon */
@@ -590,24 +709,18 @@ function zhBookToKjvBookNum(zhBook){
   const idx = CANON_INDEX.get(zhBook);
   return (idx == null) ? null : (idx + 1);
 }
-function makeKjvKey(bookNum, ch, v){
-  return `${bookNum}/${ch}:${v}`;
-}
+function makeKjvKey(bookNum, ch, v){ return `${bookNum}/${ch}:${v}`; }
 
-/* ✅ 清理 KJV 文字：移除 ¶ 等符號 + 不可見字元 + 多餘空白 */
+/* ✅ 清理 KJV 文字 */
 function cleanKjvText(s){
   s = String(s ?? "");
-  // 移除段落符號 ¶
   s = s.replaceAll("¶", "");
-  // 移除 BOM / zero-width
   s = s.replace(/[\uFEFF\u200B]/g, "");
-  // 整理空白
   s = s.replace(/\s+/g, " ").trim();
   return s;
 }
 
 async function loadBible(){
-  // ---- CUV ----
   const res = await fetch(BIBLE_URL, { cache:"no-store" });
   if(!res.ok) throw new Error("讀不到 BibleCUVmin.json（路徑或伺服器設定）");
   const raw = await res.json();
@@ -666,14 +779,11 @@ async function loadBible(){
         if(!KJV_BOOKNAME.has(bn) && it.book_name) KJV_BOOKNAME.set(bn, String(it.book_name));
       }
       KJV_READY = KJV_INDEX.size > 0;
-    }else{
-      KJV_READY = false;
-    }
+    }else KJV_READY = false;
   }catch(e){
     KJV_READY = false;
   }
 
-  // ---- init default ----
   elTest.value = BOOKS_NT.length ? "NT" : "OT";
   const first = (elTest.value === "NT" ? BOOKS_NT[0] : BOOKS_OT[0]) || BIBLE_ALL[0];
   elBook.value = first?.book || "";
@@ -683,15 +793,14 @@ async function loadBible(){
   updateFavButton();
   updateReadRate();
   rebuildBookPopupList();
+  updateNavButtons();
 }
 
 function getSelectedBookObj(){
   const name = String(elBook.value || "").trim();
   return BOOK_MAP.get(name) || null;
 }
-function currentBookList(){
-  return (elTest.value === "NT") ? BOOKS_NT : BOOKS_OT;
-}
+function currentBookList(){ return (elTest.value === "NT") ? BOOKS_NT : BOOKS_OT; }
 function getSelectedBookEnName(){
   const b = getSelectedBookObj();
   const bookName = b?.book || elBook.value || "";
@@ -701,10 +810,7 @@ function getSelectedBookEnName(){
 function updateBookButtonLabel(){
   const b = getSelectedBookObj();
   const en = getSelectedBookEnName();
-  if(!b){
-    bookBtnLabel.textContent = elBook.value ? elBook.value : "（無資料）";
-    return;
-  }
+  if(!b){ bookBtnLabel.textContent = elBook.value ? elBook.value : "（無資料）"; return; }
   const short = b.bookShort ? `（${b.bookShort}）` : "";
   const enPart = en ? ` / ${en}` : "";
   bookBtnLabel.textContent = `${b.book}${short}${enPart}`;
@@ -814,7 +920,7 @@ function verseKey(){
   return makeVerseUid(b?.book || elBook.value, elCh.value, elV.value);
 }
 
-/* ========== 收藏（穩定版） ========== */
+/* ========== 收藏 ========== */
 const FAV_LIST_KEY = LS_FAV;
 const FAV_LIST_BAK = LS_FAV + "__backup";
 function safeJsonParse(raw){ try{ return raw ? JSON.parse(raw) : null; }catch{ return null; } }
@@ -935,7 +1041,51 @@ function updateReadRate(){
   barLabel.textContent = pct + "%";
 }
 
-/* ========== 顯示（中英並存 + 過濾 ¶） ========== */
+/* ✅ 左右切換：上一節 / 下一節（跨章） */
+function gotoPrevNext(dir){
+  const maxCh = getMaxChapter();
+  let ch = Math.max(1, parseInt(elCh.value||"1",10) || 1);
+  let v  = Math.max(1, parseInt(elV.value||"1",10) || 1);
+
+  if(dir < 0){
+    if(v > 1) v -= 1;
+    else{
+      if(ch > 1){ ch -= 1; v = getMaxVerse(ch); }
+      else return;
+    }
+  }else{
+    const maxV = getMaxVerse(ch);
+    if(v < maxV) v += 1;
+    else{
+      if(ch < maxCh){ ch += 1; v = 1; }
+      else return;
+    }
+  }
+
+  elCh.value = String(ch);
+  rebuildChapterSelect();
+  elV.value  = String(v);
+  rebuildVerseSelect();
+  showBible();
+}
+
+/* ✅ 同步 PC + 手機 的 disabled 狀態 */
+function updateNavButtons(){
+  const maxCh = getMaxChapter();
+  const ch = Math.max(1, parseInt(elCh.value||"1",10) || 1);
+  const v  = Math.max(1, parseInt(elV.value||"1",10) || 1);
+  const maxV = getMaxVerse(ch);
+
+  const atStart = (ch === 1 && v === 1);
+  const atEnd   = (ch === maxCh && v === maxV);
+
+  btnPrev.disabled = atStart;
+  btnNext.disabled = atEnd;
+  if(btnPrevM) btnPrevM.disabled = atStart;
+  if(btnNextM) btnNextM.disabled = atEnd;
+}
+
+/* ========== 顯示 ========== */
 function showBible(){
   hideError();
 
@@ -950,11 +1100,12 @@ function showBible(){
     elZh.textContent = "";
     elEn.textContent = "";
     showError("查無此章節或節數（請確認 JSON 內容是否完整 / 章節是否存在）");
+    updateNavButtons();
     return;
   }
 
   const textEnRaw = getVerseTextEn(bookName, ch, v);
-  const textEn = cleanKjvText(textEnRaw); // ✅ 這行就是你要的「過濾 ¶」
+  const textEn = cleanKjvText(textEnRaw);
 
   elZh.textContent = textZh;
   elEn.textContent = textEn || (KJV_READY ? "（本節英文未對應到）" : "（KJV 未載入：請確認 assets/kjv.json 是否存在）");
@@ -962,9 +1113,16 @@ function showBible(){
   markRead();
   updateFavButton();
   updateReadRate();
+  updateNavButtons();
 }
 
-/* ========== 書卷彈窗（顯示英文書名 + 支援英文搜尋） ========== */
+/* ✅ 綁定箭頭：PC + 手機 */
+btnPrev.addEventListener("click", ()=> gotoPrevNext(-1));
+btnNext.addEventListener("click", ()=> gotoPrevNext(+1));
+if(btnPrevM) btnPrevM.addEventListener("click", ()=> gotoPrevNext(-1));
+if(btnNextM) btnNextM.addEventListener("click", ()=> gotoPrevNext(+1));
+
+/* ========== 書卷彈窗 ========== */
 function rebuildBookPopupList(filterText=""){
   const list = currentBookList();
   const q = (filterText || "").trim().toLowerCase();
@@ -1061,14 +1219,12 @@ elTest.addEventListener("change", () => {
   showBible();
 });
 
-/* ✅ 章：選了就重建節＋顯示 */
+/* 章/節 */
 elCh.addEventListener("change", () => {
   elV.value = "1";
   rebuildVerseSelect();
   showBible();
 });
-
-/* ✅ 節：選了就顯示 */
 elV.addEventListener("change", () => showBible());
 
 function escapeHtml(str){
