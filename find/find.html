@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>查經頁面（套用 BibleBooksData.json + CORS Proxy）</title>
+<title>離線查經（CUV + KJV）</title>
 <style>
   :root{
+    --pageBgImg: url("assets/Image/collectBack.png");
+
     --bg:#0b1f3a;
     --yellow:#ffe93a;
     --btn:#35d56b;
@@ -17,19 +19,107 @@
 
     --popBg:#0a2346;
     --popBg2:#0b1f3a;
-    --popItem:rgba(255,255,255,.10);
-    --popItemHover:rgba(255,255,255,.16);
     --popStroke:rgba(255,255,255,.18);
+
+    --homeBtnBg: rgba(0,0,0,.42);
+    --homeBtnStroke: rgba(255,255,255,.22);
+
+    --favBtnBg: rgba(0,0,0,.42);
+    --favBtnStroke: rgba(255,255,255,.22);
   }
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{
     margin:0;
     font-family:"Noto Sans TC",system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-serif;
-    background:var(--bg);
     color:#fff;
     text-align:center;
     padding:18px 14px 26px;
+    background:
+      radial-gradient(1200px 700px at 30% 10%, rgba(0,0,0,.25), rgba(0,0,0,.55)),
+      var(--pageBgImg);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
   }
+
+  /* ✅ 右上角按鈕列（回首頁 + 收藏） */
+  .topBtns{
+    position:fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 1200;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .homeBtn, .favTopBtn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid var(--homeBtnStroke);
+    background:var(--homeBtnBg);
+    color:#fff;
+    font-weight:1000;
+    cursor:pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 14px 30px rgba(0,0,0,.25);
+    user-select:none;
+    white-space:nowrap;
+  }
+  .homeBtn:active, .favTopBtn:active{ transform: translateY(1px); }
+
+  .homeIcon{
+    width:18px;height:18px; display:inline-block;
+    border:2px solid rgba(255,255,255,.9);
+    border-bottom:none;
+    transform: rotate(45deg);
+    border-radius:2px;
+    position:relative;
+    margin-left:2px;
+  }
+  .homeIcon:after{
+    content:"";
+    position:absolute;
+    width:10px;height:10px;
+    border:2px solid rgba(255,255,255,.9);
+    border-top:none;border-right:none;
+    left:2px; top:6px;
+    transform: rotate(-45deg);
+    border-radius:2px;
+  }
+
+  /* 收藏 icon（小書籤） */
+  .favIcon{
+    width:16px;height:18px;
+    border:2px solid rgba(255,255,255,.92);
+    border-radius:3px;
+    position:relative;
+  }
+  .favIcon:after{
+    content:"";
+    position:absolute;
+    left:3px; right:3px;
+    bottom:-2px;
+    height:0;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:7px solid rgba(255,255,255,.92);
+    margin:auto;
+    width:0;
+  }
+
+  .favTopBtn[disabled]{
+    opacity:.55;
+    cursor:not-allowed;
+    transform:none;
+  }
+
   h1{margin:0 0 10px;font-size:26px}
 
   .panel{
@@ -40,7 +130,9 @@
     border-radius:16px;
     box-shadow:var(--shadow);
     padding:12px 12px 14px;
+    backdrop-filter: blur(2px);
   }
+
   .controls{
     display:flex;
     flex-wrap:wrap;
@@ -67,19 +159,16 @@
     font-weight:800;
   }
   option{ background:#0b1f3a; color:#fff; }
-  input{width:86px;text-align:center}
 
-  button{
-    padding:11px 14px;
-    border:none;
-    border-radius:14px;
-    background:linear-gradient(180deg,var(--btn),var(--btn2));
-    color:#fff;
+  /* 章/節 select 寬一點比較好用 */
+  #chapter,#verse{ min-width:92px; }
+
+  .lblEn{
+    font-size:12px;
+    opacity:.78;
     font-weight:1000;
-    cursor:pointer;
-    box-shadow:var(--shadow);
+    letter-spacing:.3px;
   }
-  button:disabled{background:#8a8a8a;cursor:not-allowed;box-shadow:none}
 
   .meta{
     margin:10px 0 0;
@@ -87,6 +176,7 @@
     color:rgba(255,255,255,.86);
     line-height:1.35;
   }
+
   .verseZh{
     margin:14px 0 10px;
     font-size:clamp(24px,3.2vw,40px);
@@ -95,14 +185,18 @@
     line-height:1.35;
     white-space:pre-wrap;
   }
+
+  /* ✅ 英文：字色跟中文一樣（黃色） */
   .verseEn{
-    margin:0 0 10px;
-    font-size:clamp(18px,2.6vw,32px);
+    margin:0 0 8px;
+    font-size:clamp(16px,2.2vw,24px);
     font-weight:1000;
     color:var(--yellow);
-    line-height:1.35;
+    line-height:1.55;
     white-space:pre-wrap;
+    text-shadow:0 2px 12px rgba(0,0,0,.25);
   }
+
   .error{
     display:none;
     margin:10px auto 0;
@@ -113,6 +207,7 @@
     padding:10px 12px;
     font-weight:1000;
   }
+
   .barWrap{max-width:980px;margin:14px auto 0}
   .bar{
     height:28px;
@@ -154,7 +249,7 @@
     color:#fff;
     font-weight:900;
     cursor:pointer;
-    min-width:min(380px, 82vw);
+    min-width:min(420px, 86vw);
     justify-content:space-between;
     box-shadow:none;
   }
@@ -260,6 +355,14 @@
   }
   .bookItem .names .en{
     font-size:12px;
+    color:rgba(255,255,255,.78);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-weight:1000;
+  }
+  .bookItem .names .short{
+    font-size:12px;
     color:rgba(255,255,255,.74);
     white-space:nowrap;
     overflow:hidden;
@@ -275,41 +378,71 @@
     color:rgba(255,255,255,.9);
   }
 
-  /* ✅ 手機：章/節 用 select；桌機：章/節 用 input（同一格只會出現一個） */
-  .chInput,.vInput{ display:inline-block; }
-  .chSelect,.vSelect{ display:none; }
-
+  /* ✅ 手機：章/節並排（同一排） */
   @media (max-width:640px){
-    .chInput,.vInput{ display:none; }
-    .chSelect,.vSelect{ display:inline-block; }
+    .grp.cvRow{
+      width:100%;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:nowrap;
+    }
+    .grp.cvRow .cvHalf{
+      flex:1 1 0;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+      min-width:0;
+    }
+    .grp.cvRow .cvHalf select{
+      width:100%;
+      min-width:0;
+    }
+    .grp.cvRow .sep{ display:none; }
+    .grp.cvRow #maxCh,
+    .grp.cvRow #maxV{
+      font-size:12px;
+      opacity:.85;
+      white-space:nowrap;
+    }
+    .lblEn{ display:none; } /* 手機更乾淨：英文標籤先隱藏 */
   }
 
   @media (max-width:520px){
-    .bookBtn{ min-width:min(320px, 88vw); }
+    .bookBtn{ min-width:min(340px, 90vw); }
     .controls{ gap:8px; }
+    .topBtns{ gap:8px; }
+    .homeBtn,.favTopBtn{ padding:9px 10px; border-radius:13px; }
   }
 </style>
 </head>
 <body>
 
-<h1>查經頁面</h1>
+<!-- ✅ 回首頁 + 加入收藏 右上角 -->
+<div class="topBtns">
+  <button class="homeBtn" id="homeBtn" type="button" title="回首頁">
+    <span class="homeIcon" aria-hidden="true"></span>
+    回首頁
+  </button>
+
+  <button class="favTopBtn" id="favBtn" type="button" title="加入收藏">
+    <span class="favIcon" aria-hidden="true"></span>
+    加入收藏
+  </button>
+</div>
+
+<h1>離線查經（和合本 + KJV）</h1>
 
 <div class="panel">
   <div class="controls">
-    <div class="grp">
-      <span>語言</span>
-      <select id="lang">
-        <option value="both">中英（cut + niv）</option>
-        <option value="cut">只中文（cut）</option>
-        <option value="niv">只英文（niv）</option>
-      </select>
-    </div>
 
     <div class="grp">
       <span>約</span>
       <select id="testament">
-        <option value="OT">舊約 Old</option>
-        <option value="NT" selected>新約 New</option>
+        <option value="OT">舊約</option>
+        <option value="NT" selected>新約</option>
       </select>
     </div>
 
@@ -324,30 +457,27 @@
       </div>
     </div>
 
-    <!-- 章（只一組） -->
-    <div class="grp">
-      <span>章</span>
-      <input id="chapter" class="chInput" type="number" value="1" min="1" step="1">
-      <select id="chapterSel" class="chSelect"></select>
-      <span class="sep">/</span>
-      <span id="maxCh">—</span>
-    </div>
+    <!-- ✅ 手機：章/節並排（章/節加英文標籤） -->
+    <div class="grp cvRow">
+      <div class="cvHalf">
+        <span>章</span><span class="lblEn">Chapter</span>
+        <select id="chapter"></select>
+        <span class="sep">/</span>
+        <span id="maxCh">—</span>
+      </div>
 
-    <!-- ✅ 節（只一組）：手機用 select，固定 1~180 -->
-    <div class="grp">
-      <span>節</span>
-      <input id="verse" class="vInput" type="number" value="1" min="1" step="1">
-      <select id="verseSel" class="vSelect"></select>
-    </div>
-
-    <div class="grp">
-      <button id="btnSearch">搜尋</button>
-      <button id="favBtn">加入收藏</button>
+      <div class="cvHalf">
+        <span>節</span><span class="lblEn">Verse</span>
+        <select id="verse"></select>
+        <span class="sep">/</span>
+        <span id="maxV">—</span>
+      </div>
     </div>
   </div>
 
-  <div class="meta" id="metaLine">（正在載入書卷資料…）</div>
+  <div class="meta" id="metaLine">（正在載入離線聖經資料…）</div>
 
+  <!-- ✅ 中英文並存 -->
   <div class="verseZh" id="zh"></div>
   <div class="verseEn" id="en"></div>
 </div>
@@ -360,111 +490,193 @@
     <div class="barLabel" id="barLabel">0%</div>
   </div>
   <div class="hint">
-    閱讀率：以「目前書卷 Verses（總節數）」為分母；閱讀紀錄只在中文 cut 成功取得時才會記錄。
+    閱讀率：以「目前書卷總節數」為分母；每次成功顯示經文就會記錄一次閱讀。
   </div>
 </div>
 
-<!-- 書卷彈窗 -->
 <div class="overlay" id="overlay" aria-hidden="true">
   <div class="bookPop" role="dialog" aria-modal="true" aria-label="選擇書卷">
     <div class="bookPopHeader">
-      <div class="title">選擇書卷</div>
+      <div class="title">選擇書卷 / Select Book</div>
       <button class="close" id="bookClose" type="button">關閉</button>
     </div>
     <div style="padding:10px 12px 0;">
-      <input id="bookSearch" class="bookSearch" placeholder="搜尋：中文 / English / Code（例如 mat, gal）" autocomplete="off">
+      <input id="bookSearch" class="bookSearch" placeholder="搜尋：例如 創世記 / 創 / 馬太福音 / 太 / Matthew" autocomplete="off">
     </div>
     <div class="bookList" id="bookList"></div>
   </div>
 </div>
 
 <script>
-const BOOKS_URL = "assets/BibleBooksData.json";
+/* ✅ 離線經文檔 */
+const BIBLE_URL = "assets/BibleCUVmin.json";
+const KJV_URL   = "assets/BibleKJVmin.json";
+
+/* ✅ 收藏 key */
 const LS_FAV  = "bible_fav_v1";
-const LS_READ = "bible_read_cut_v1";
+const LS_READ = "bible_read_cuv_v1";
 
-/* ✅ 手機「節」固定可選 1~180 */
-const VERSE_SELECT_MAX = 180;
+/* 節下拉：最多顯示到 180（會依實際章節節數縮小） */
+const VERSE_SELECT_CAP = 180;
 
-const elLang = document.getElementById("lang");
+/* DOM */
 const elTest = document.getElementById("testament");
-
 const elBook = document.getElementById("book");
 const bookBtn = document.getElementById("bookBtn");
 const bookBtnLabel = document.getElementById("bookBtnLabel");
-
-const elCh    = document.getElementById("chapter");     // input
-const elChSel = document.getElementById("chapterSel");  // select
+const elCh    = document.getElementById("chapter");
 const elMaxCh = document.getElementById("maxCh");
-
-const elV     = document.getElementById("verse");       // input
-const elVSel  = document.getElementById("verseSel");    // select
-
+const elV     = document.getElementById("verse");
+const elMaxV  = document.getElementById("maxV");
 const elZh   = document.getElementById("zh");
 const elEn   = document.getElementById("en");
 const elErr  = document.getElementById("error");
 const elMeta = document.getElementById("metaLine");
-
-const btnSearch = document.getElementById("btnSearch");
-const btnFav    = document.getElementById("favBtn");
-
+const btnFav  = document.getElementById("favBtn");
 const barFill  = document.getElementById("barFill");
 const barLabel = document.getElementById("barLabel");
-
 const overlay = document.getElementById("overlay");
 const bookListEl = document.getElementById("bookList");
 const bookSearchEl = document.getElementById("bookSearch");
 const bookCloseBtn = document.getElementById("bookClose");
 
-let BOOKS_ALL = [];
-let BOOKS_BY_TEST = { OT: [], NT: [] };
+/* 回首頁 */
+document.getElementById("homeBtn").addEventListener("click", () => {
+  location.href = "../index.html";
+});
 
 function lsGet(key, fallback){
-  try{
-    const v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : fallback;
-  }catch(e){ return fallback; }
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
 }
-function lsSet(key, value){
-  localStorage.setItem(key, JSON.stringify(value));
+function lsSet(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+
+function showError(msg){ elErr.style.display="block"; elErr.textContent=msg; }
+function hideError(){ elErr.style.display="none"; elErr.textContent=""; }
+
+/* ========== CUV data ========== */
+let BIBLE_ALL = [];
+let BOOKS_OT = [];
+let BOOKS_NT = [];
+let BOOK_MAP = new Map();
+let BOOK_VERSE_TOTAL = new Map();
+
+/* ========== KJV data ========== */
+let KJV_INDEX = new Map();      // "bookNum/ch:v" -> text
+let KJV_BOOKNAME = new Map();   // bookNum -> "Genesis"
+let KJV_READY = false;
+
+/* Canon */
+const CANON_ZH = [
+  "創世記","出埃及記","利未記","民數記","申命記",
+  "約書亞記","士師記","路得記","撒母耳記上","撒母耳記下",
+  "列王紀上","列王紀下","歷代志上","歷代志下","以斯拉記",
+  "尼希米記","以斯帖記","約伯記","詩篇","箴言",
+  "傳道書","雅歌","以賽亞書","耶利米書","耶利米哀歌",
+  "以西結書","但以理書","何西阿書","約珥書","阿摩司書",
+  "俄巴底亞書","約拿書","彌迦書","那鴻書","哈巴谷書",
+  "西番雅書","哈該書","撒迦利亞書","瑪拉基書",
+  "馬太福音","馬可福音","路加福音","約翰福音","使徒行傳",
+  "羅馬書","哥林多前書","哥林多後書","加拉太書","以弗所書",
+  "腓立比書","歌羅西書","帖撒羅尼迦前書","帖撒羅尼迦後書",
+  "提摩太前書","提摩太後書","提多書","腓利門書","希伯來書",
+  "雅各書","彼得前書","彼得後書","約翰一書","約翰二書",
+  "約翰三書","猶大書","啟示錄"
+];
+const CANON_INDEX = new Map(CANON_ZH.map((n,i)=>[n,i]));
+
+/* 中文書名 -> KJV book number（1..66） */
+function zhBookToKjvBookNum(zhBook){
+  const idx = CANON_INDEX.get(zhBook);
+  return (idx == null) ? null : (idx + 1);
 }
-function inferTestamentById(id){
-  const n = Number(id);
-  if(!Number.isFinite(n)) return "OT";
-  return (n <= 39) ? "OT" : "NT";
+function makeKjvKey(bookNum, ch, v){
+  return `${bookNum}/${ch}:${v}`;
 }
 
-async function loadBooks(){
-  const res = await fetch(BOOKS_URL, { cache:"no-store" });
-  if(!res.ok) throw new Error("讀不到 BibleBooksData.json（路徑或伺服器設定）");
+/* ✅ 清理 KJV 文字：移除 ¶ 等符號 + 不可見字元 + 多餘空白 */
+function cleanKjvText(s){
+  s = String(s ?? "");
+  // 移除段落符號 ¶
+  s = s.replaceAll("¶", "");
+  // 移除 BOM / zero-width
+  s = s.replace(/[\uFEFF\u200B]/g, "");
+  // 整理空白
+  s = s.replace(/\s+/g, " ").trim();
+  return s;
+}
 
+async function loadBible(){
+  // ---- CUV ----
+  const res = await fetch(BIBLE_URL, { cache:"no-store" });
+  if(!res.ok) throw new Error("讀不到 BibleCUVmin.json（路徑或伺服器設定）");
   const raw = await res.json();
-  if(!Array.isArray(raw)) throw new Error("BibleBooksData.json 必須是 Array");
+  if(!Array.isArray(raw)) throw new Error("BibleCUVmin.json 必須是 Array");
 
-  BOOKS_ALL = raw.map(b => ({
-    Id: b.Id,
-    Code: String(b.Code || "").trim().toLowerCase(),
-    Name: b.Name || "",
-    NameE: b.NameE || "",
-    Chapters: Number(b.Chapters || 0),
-    Verses: Number(b.Verses || 0),
-    Testament: inferTestamentById(b.Id),
-  })).filter(b => b.Code);
+  BIBLE_ALL = raw
+    .map(b => ({
+      book: String(b.book || "").trim(),
+      bookShort: String(b.bookShort || "").trim(),
+      chapters: Array.isArray(b.chapters) ? b.chapters : []
+    }))
+    .filter(b => b.book && b.chapters.length);
 
-  BOOKS_BY_TEST.OT = BOOKS_ALL.filter(b => b.Testament === "OT");
-  BOOKS_BY_TEST.NT = BOOKS_ALL.filter(b => b.Testament === "NT");
+  BOOK_MAP = new Map(BIBLE_ALL.map(b => [b.book, b]));
 
-  elTest.value = BOOKS_BY_TEST.NT.length ? "NT" : "OT";
+  BIBLE_ALL.sort((a,b)=>{
+    const ia = CANON_INDEX.has(a.book) ? CANON_INDEX.get(a.book) : 9999;
+    const ib = CANON_INDEX.has(b.book) ? CANON_INDEX.get(b.book) : 9999;
+    return ia - ib;
+  });
 
-  const first = (BOOKS_BY_TEST[elTest.value] || [])[0];
-  elBook.value = first ? first.Code : (BOOKS_ALL[0]?.Code || "");
+  BOOKS_OT = BIBLE_ALL.filter(b => (CANON_INDEX.get(b.book) ?? 9999) <= 38);
+  BOOKS_NT = BIBLE_ALL.filter(b => (CANON_INDEX.get(b.book) ?? 9999) >= 39);
 
-  // 預設 1章1節
-  elCh.value = 1;
-  elV.value = 1;
+  if(!BOOKS_OT.length && !BOOKS_NT.length){
+    BOOKS_OT = BIBLE_ALL.slice();
+    BOOKS_NT = [];
+  }
 
-  buildVerseSelectOnce();
-  syncVerseToSelect();
+  BOOK_VERSE_TOTAL = new Map();
+  for(const bk of BIBLE_ALL){
+    let total = 0;
+    for(const ch of bk.chapters){
+      if(Array.isArray(ch?.verses)) total += ch.verses.length;
+    }
+    BOOK_VERSE_TOTAL.set(bk.book, total);
+  }
+
+  // ---- KJV ----
+  try{
+    const kjvRes = await fetch(KJV_URL, { cache:"no-store" });
+    if(kjvRes.ok){
+      const kjvJson = await kjvRes.json();
+      const verses = Array.isArray(kjvJson?.verses) ? kjvJson.verses : [];
+
+      KJV_INDEX = new Map();
+      KJV_BOOKNAME = new Map();
+      for(const it of verses){
+        const bn = Number(it.book);
+        const ch = Number(it.chapter);
+        const v  = Number(it.verse);
+        if(!bn || !ch || !v) continue;
+
+        const key = makeKjvKey(bn, ch, v);
+        if(!KJV_INDEX.has(key)) KJV_INDEX.set(key, String(it.text ?? ""));
+        if(!KJV_BOOKNAME.has(bn) && it.book_name) KJV_BOOKNAME.set(bn, String(it.book_name));
+      }
+      KJV_READY = KJV_INDEX.size > 0;
+    }else{
+      KJV_READY = false;
+    }
+  }catch(e){
+    KJV_READY = false;
+  }
+
+  // ---- init default ----
+  elTest.value = BOOKS_NT.length ? "NT" : "OT";
+  const first = (elTest.value === "NT" ? BOOKS_NT[0] : BOOKS_OT[0]) || BIBLE_ALL[0];
+  elBook.value = first?.book || "";
 
   updateBookButtonLabel();
   updateMetaAndLimits();
@@ -473,26 +685,50 @@ async function loadBooks(){
   rebuildBookPopupList();
 }
 
-function getSelectedBook(){
-  const code = (elBook.value || "").toLowerCase();
-  return BOOKS_ALL.find(b => b.Code === code) || null;
+function getSelectedBookObj(){
+  const name = String(elBook.value || "").trim();
+  return BOOK_MAP.get(name) || null;
+}
+function currentBookList(){
+  return (elTest.value === "NT") ? BOOKS_NT : BOOKS_OT;
+}
+function getSelectedBookEnName(){
+  const b = getSelectedBookObj();
+  const bookName = b?.book || elBook.value || "";
+  const bn = zhBookToKjvBookNum(bookName);
+  return (KJV_READY && bn && KJV_BOOKNAME.has(bn)) ? KJV_BOOKNAME.get(bn) : "";
 }
 function updateBookButtonLabel(){
-  const b = getSelectedBook();
-  bookBtnLabel.textContent = b ? `${b.Name} / ${b.NameE}` : (elBook.value || "（無資料）");
+  const b = getSelectedBookObj();
+  const en = getSelectedBookEnName();
+  if(!b){
+    bookBtnLabel.textContent = elBook.value ? elBook.value : "（無資料）";
+    return;
+  }
+  const short = b.bookShort ? `（${b.bookShort}）` : "";
+  const enPart = en ? ` / ${en}` : "";
+  bookBtnLabel.textContent = `${b.book}${short}${enPart}`;
 }
 
-/* ===== 章（手機 select） ===== */
-function rebuildChapterSelect(){
-  const b = getSelectedBook();
-  const max = Math.max(1, Number(b?.Chapters || 1));
+function getMaxChapter(){
+  const b = getSelectedBookObj();
+  return Math.max(1, b?.chapters?.length || 1);
+}
+function getMaxVerse(ch){
+  const b = getSelectedBookObj();
+  const idx = Math.max(1, parseInt(ch||"1",10) || 1) - 1;
+  const verses = b?.chapters?.[idx]?.verses;
+  return Math.max(1, Array.isArray(verses) ? verses.length : 1);
+}
 
-  let cur = Number(elCh.value || 1);
-  if(!Number.isFinite(cur) || cur < 1) cur = 1;
+function rebuildChapterSelect(){
+  const max = getMaxChapter();
+  let cur = parseInt(elCh.value || "1", 10) || 1;
+  if(cur < 1) cur = 1;
   if(cur > max) cur = max;
 
-  if(elChSel.options.length !== max){
-    elChSel.innerHTML = "";
+  if(elCh.options.length !== max){
+    elCh.innerHTML = "";
     const frag = document.createDocumentFragment();
     for(let i=1;i<=max;i++){
       const opt = document.createElement("option");
@@ -500,138 +736,181 @@ function rebuildChapterSelect(){
       opt.textContent = String(i);
       frag.appendChild(opt);
     }
-    elChSel.appendChild(frag);
+    elCh.appendChild(frag);
   }
-
-  elCh.value = cur;
-  elChSel.value = String(cur);
-  elCh.max = max;
+  elCh.value = String(cur);
   elMaxCh.textContent = String(max);
 }
 
-function clampChapter(){
-  const b = getSelectedBook();
-  const max = Math.max(1, Number(b?.Chapters || 1));
-  let v = parseInt(elCh.value || "1", 10);
-  if(!Number.isFinite(v) || v < 1) v = 1;
-  if(v > max) v = max;
-  elCh.value = v;
-  elCh.max = max;
-  elMaxCh.textContent = String(max);
-  rebuildChapterSelect();
-}
+function rebuildVerseSelect(){
+  const maxV = getMaxVerse(elCh.value);
+  const showMax = Math.min(VERSE_SELECT_CAP, maxV);
 
-/* ===== ✅ 節（手機 select，固定 1~180） ===== */
-function buildVerseSelectOnce(){
-  if(elVSel.options.length === VERSE_SELECT_MAX) return;
-  elVSel.innerHTML = "";
-  const frag = document.createDocumentFragment();
-  for(let i=1;i<=VERSE_SELECT_MAX;i++){
-    const opt = document.createElement("option");
-    opt.value = String(i);
-    opt.textContent = String(i);
-    frag.appendChild(opt);
+  elMaxV.textContent = String(maxV);
+
+  if(elV.options.length !== showMax){
+    elV.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    for(let i=1;i<=showMax;i++){
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = String(i);
+      frag.appendChild(opt);
+    }
+    elV.appendChild(frag);
   }
-  elVSel.appendChild(frag);
-}
 
-function clampVerse(){
-  let v = parseInt(elV.value || "1", 10);
-  if(!Number.isFinite(v) || v < 1) v = 1;
-  if(v > VERSE_SELECT_MAX) v = VERSE_SELECT_MAX;
-  elV.value = v;
-  syncVerseToSelect();
-}
+  let cur = parseInt(elV.value || "1", 10) || 1;
+  if(cur < 1) cur = 1;
+  if(cur > maxV) cur = maxV;
+  if(cur > showMax) cur = showMax;
 
-function syncVerseToSelect(){
-  buildVerseSelectOnce();
-  let v = parseInt(elV.value || "1", 10);
-  if(!Number.isFinite(v) || v < 1) v = 1;
-  if(v > VERSE_SELECT_MAX) v = VERSE_SELECT_MAX;
-  elVSel.value = String(v);
+  elV.value = String(cur);
 }
 
 function updateMetaAndLimits(){
-  const b = getSelectedBook();
-  const code = b?.Code || elBook.value;
-  const name = b?.Name || "";
-  const nameE = b?.NameE || "";
-  const verses = b?.Verses || 0;
-  const chMax = Math.max(1, Number(b?.Chapters || 1));
+  const b = getSelectedBookObj();
+  const bookName = b?.book || elBook.value || "";
+  const short = b?.bookShort ? `（${b.bookShort}）` : "";
+  const chapters = getMaxChapter();
+  const totalVerses = BOOK_VERSE_TOTAL.get(bookName) || 0;
 
-  elMeta.textContent =
-    `${name} ${nameE} ｜ Code: ${code} ｜ Chapters: ${chMax || "—"} ｜ Verses: ${verses || "—"}`;
+  const enBook = getSelectedBookEnName();
+  const enPart = enBook ? ` ｜ ${enBook}` : (KJV_READY ? "" : " ｜ KJV 未載入");
 
+  elMeta.textContent = `${bookName}${short}${enPart} ｜ 章數：${chapters} ｜ 總節數：${totalVerses || "—"}`;
+
+  if(!elCh.value) elCh.value = "1";
+  if(!elV.value) elV.value = "1";
   rebuildChapterSelect();
-  clampVerse(); // 仍固定 1~180
+  rebuildVerseSelect();
 }
 
-function showError(msg){
-  elErr.style.display = "block";
-  elErr.textContent = msg;
+function getVerseTextZh(bookName, ch, v){
+  const b = BOOK_MAP.get(bookName);
+  if(!b) return null;
+  const chIdx = (parseInt(ch,10)||1) - 1;
+  const vIdx  = (parseInt(v,10)||1) - 1;
+  const verses = b.chapters?.[chIdx]?.verses;
+  if(!Array.isArray(verses)) return null;
+  return verses[vIdx]?.text ?? null;
 }
-function hideError(){
-  elErr.style.display = "none";
-  elErr.textContent = "";
-}
-
-function parseIbiblesFirstVerse(html){
-  const re = /<small>([^<]+)<\/small>\s*([^<]+)<br>/;
-  const m = html.match(re);
-  return m ? (m[2] || "").trim() : null;
-}
-async function fetchVerseViaProxy(lang, bookCode, ch, v){
-  const target = `https://ibibles.net/quote.php?${lang}-${bookCode}/${ch}:${v}`;
-  const url = "https://api.allorigins.win/raw?url=" + encodeURIComponent(target);
-  const res = await fetch(url, { cache:"no-store" });
-  if(!res.ok) throw new Error("network");
-  const html = await res.text();
-  return parseIbiblesFirstVerse(html);
+function getVerseTextEn(bookName, ch, v){
+  if(!KJV_READY) return "";
+  const bn = zhBookToKjvBookNum(bookName);
+  if(!bn) return "";
+  const key = makeKjvKey(bn, parseInt(ch,10)||1, parseInt(v,10)||1);
+  return KJV_INDEX.get(key) || "";
 }
 
+function makeVerseUid(bookName, ch, v){
+  const bn = String(bookName||"").trim();
+  const cc = Math.max(1, parseInt(ch || "1", 10) || 1);
+  const vv = Math.max(1, parseInt(v  || "1", 10) || 1);
+  return `${bn}/${cc}:${vv}`;
+}
 function verseKey(){
-  const code = (elBook.value || "").toLowerCase();
-  const ch = Math.max(1, parseInt(elCh.value || "1", 10));
-  const v  = Math.max(1, parseInt(elV.value  || "1", 10));
-  return `${code}/${ch}:${v}`;
+  const b = getSelectedBookObj();
+  return makeVerseUid(b?.book || elBook.value, elCh.value, elV.value);
 }
 
-/* 收藏 */
-function getFavList(){ return lsGet(LS_FAV, []); }
-function isFavorited(){
-  const id = verseKey();
-  return getFavList().some(x => x.id === id);
+/* ========== 收藏（穩定版） ========== */
+const FAV_LIST_KEY = LS_FAV;
+const FAV_LIST_BAK = LS_FAV + "__backup";
+function safeJsonParse(raw){ try{ return raw ? JSON.parse(raw) : null; }catch{ return null; } }
+function getFavId(item){
+  if(!item) return "";
+  if(item.id != null && String(item.id).trim() !== "") return String(item.id).trim();
+  if(item.verseId != null && String(item.verseId).trim() !== "") return String(item.verseId).trim();
+  if(item.book && item.ch && item.v) return makeVerseUid(item.book, item.ch, item.v);
+  return "";
+}
+function loadFavList(){
+  const raw = localStorage.getItem(FAV_LIST_KEY);
+  const arr = safeJsonParse(raw);
+  if(Array.isArray(arr)) return arr;
+
+  const bakRaw = localStorage.getItem(FAV_LIST_BAK);
+  const bak = safeJsonParse(bakRaw);
+  if(Array.isArray(bak)){
+    localStorage.setItem(FAV_LIST_KEY, JSON.stringify(bak));
+    return bak;
+  }
+  return [];
+}
+function saveFavList(arr){
+  const text = JSON.stringify(arr);
+  localStorage.setItem(FAV_LIST_BAK, text);
+  localStorage.setItem(FAV_LIST_KEY, text);
+}
+function isFavoritedById(favId){
+  const target = String(favId ?? "").trim();
+  if(!target) return false;
+  const list = loadFavList();
+  return list.some(it => getFavId(it) === target);
+}
+function upsertFavItem(keep){
+  const target = getFavId(keep);
+  if(!target) return false;
+
+  const list = loadFavList();
+  const map = new Map();
+  for(const it of list){
+    const vid = getFavId(it);
+    if(!vid) continue;
+    const prev = map.get(vid);
+    if(!prev) map.set(vid, it);
+    else{
+      const pa = Number(prev._savedAt || 0);
+      const na = Number(it._savedAt || 0);
+      if(na >= pa) map.set(vid, it);
+    }
+  }
+  map.set(target, keep);
+
+  const merged = Array.from(map.values()).sort((a,b)=>(Number(b._savedAt||0)-Number(a._savedAt||0)));
+  saveFavList(merged);
+  return true;
+}
+function addFavOnce(payload){
+  const favId = getFavId(payload);
+  if(!favId) return false;
+  if(isFavoritedById(favId)) return false;
+  return upsertFavItem(payload);
 }
 function updateFavButton(){
-  const yes = isFavorited();
+  const uid = verseKey();
+  const yes = isFavoritedById(uid);
   btnFav.disabled = yes;
   btnFav.textContent = yes ? "已收藏" : "加入收藏";
 }
 btnFav.addEventListener("click", () => {
   if(btnFav.disabled) return;
 
-  const b = getSelectedBook();
-  const id = verseKey();
-  const list = getFavList();
+  const b = getSelectedBookObj();
+  const bookName = (b?.book || elBook.value || "");
+  const uid = verseKey();
 
-  list.unshift({
-    id,
-    code: (b?.Code || elBook.value || "").toLowerCase(),
-    name: b?.Name || "",
-    nameE: b?.NameE || "",
+  const keep = {
+    id: uid,
+    verseId: uid,
+    book: bookName,
+    code: (b?.bookShort || b?.book || elBook.value || ""),
+    name: bookName,
+    nameE: getSelectedBookEnName(),
     ch: parseInt(elCh.value||"1",10),
-    v: parseInt(elV.value||"1",10),
+    v:  parseInt(elV.value||"1",10),
     zh: elZh.textContent || "",
     en: elEn.textContent || "",
-    ts: Date.now()
-  });
+    _savedAt: Date.now()
+  };
 
-  lsSet(LS_FAV, list);
+  const added = addFavOnce(keep);
   updateFavButton();
-  alert("已加入收藏（localStorage）");
+  if(added) alert("已加入收藏（localStorage）");
 });
 
-/* 閱讀率 */
+/* ========== 閱讀率 ========== */
 function getReadSet(){ return new Set(lsGet(LS_READ, [])); }
 function saveReadSet(set){ lsSet(LS_READ, Array.from(set)); }
 function markRead(){
@@ -640,84 +919,61 @@ function markRead(){
   saveReadSet(set);
 }
 function updateReadRate(){
-  const b = getSelectedBook();
-  const code = (b?.Code || elBook.value || "").toLowerCase();
-  const total = Number(b?.Verses || 0);
+  const b = getSelectedBookObj();
+  const bookName = b?.book || elBook.value || "";
+  const total = Number(BOOK_VERSE_TOTAL.get(bookName) || 0);
 
   const set = getReadSet();
   let count = 0;
   for(const k of set){
-    if(k.startsWith(code + "/")) count++;
+    if(k.startsWith(bookName + "/")) count++;
   }
 
   let pct = 0;
-  if(total > 0){
-    pct = Math.max(0, Math.min(100, Math.round((count / total) * 100)));
-  }
+  if(total > 0) pct = Math.max(0, Math.min(100, Math.round((count / total) * 100)));
   barFill.style.width = pct + "%";
   barLabel.textContent = pct + "%";
 }
 
-/* 搜尋 */
-async function searchBible(){
+/* ========== 顯示（中英並存 + 過濾 ¶） ========== */
+function showBible(){
   hideError();
-  clampChapter();
-  clampVerse();
 
-  const b = getSelectedBook();
-  const bookCode = (b?.Code || elBook.value || "").toLowerCase();
+  const b = getSelectedBookObj();
+  const bookName = b?.book || elBook.value;
 
   const ch = Math.max(1, parseInt(elCh.value || "1", 10));
   const v  = Math.max(1, parseInt(elV.value  || "1", 10));
 
-  elZh.textContent = "（載入中…）";
-  elEn.textContent = "";
-
-  const mode = elLang.value;
-
-  try{
-    let zh = "", en = "";
-
-    if(mode === "both" || mode === "cut"){
-      zh = await fetchVerseViaProxy("cut", bookCode, ch, v);
-      if(!zh){
-        elZh.textContent = "";
-        elEn.textContent = "";
-        showError("查無此章節！（或書卷 Code 不符合 ibibles 代碼）");
-        return;
-      }
-      elZh.textContent = zh;
-      markRead();
-    }else{
-      elZh.textContent = "";
-    }
-
-    if(mode === "both" || mode === "niv"){
-      en = await fetchVerseViaProxy("niv", bookCode, ch, v);
-      elEn.textContent = en || "";
-    }
-
-    updateFavButton();
-    updateReadRate();
-  }catch(e){
+  const textZh = getVerseTextZh(bookName, ch, v);
+  if(!textZh){
     elZh.textContent = "";
     elEn.textContent = "";
-    showError("您的網路未連線 無法取得資料！（或 Proxy 暫時不可用）");
+    showError("查無此章節或節數（請確認 JSON 內容是否完整 / 章節是否存在）");
+    return;
   }
+
+  const textEnRaw = getVerseTextEn(bookName, ch, v);
+  const textEn = cleanKjvText(textEnRaw); // ✅ 這行就是你要的「過濾 ¶」
+
+  elZh.textContent = textZh;
+  elEn.textContent = textEn || (KJV_READY ? "（本節英文未對應到）" : "（KJV 未載入：請確認 assets/kjv.json 是否存在）");
+
+  markRead();
+  updateFavButton();
+  updateReadRate();
 }
 
-/* ===== 書卷彈窗 ===== */
-function currentBookList(){
-  const t = elTest.value;
-  return BOOKS_BY_TEST[t] || [];
-}
+/* ========== 書卷彈窗（顯示英文書名 + 支援英文搜尋） ========== */
 function rebuildBookPopupList(filterText=""){
   const list = currentBookList();
   const q = (filterText || "").trim().toLowerCase();
 
   const filtered = !q ? list : list.filter(b => {
-    const s = `${b.Name} ${b.NameE} ${b.Code}`.toLowerCase();
-    return s.includes(q);
+    const zh = `${b.book} ${b.bookShort}`.toLowerCase();
+    const bn = zhBookToKjvBookNum(b.book);
+    const en = (KJV_READY && bn && KJV_BOOKNAME.has(bn)) ? KJV_BOOKNAME.get(bn).toLowerCase() : "";
+    return (zh.includes(q) || en.includes(q));
   });
 
   if(!filtered.length){
@@ -725,19 +981,27 @@ function rebuildBookPopupList(filterText=""){
     return;
   }
 
+  const now = String(elBook.value||"").trim();
   bookListEl.innerHTML = filtered.map(b => {
-    const isNow = (b.Code === (elBook.value||"").toLowerCase());
+    const isNow = (b.book === now);
+    const bn = zhBookToKjvBookNum(b.book);
+    const enName = (KJV_READY && bn && KJV_BOOKNAME.has(bn)) ? KJV_BOOKNAME.get(bn) : "";
+    const short = b.bookShort ? `簡寫：${escapeHtml(b.bookShort)}` : "";
+    const enLine = enName ? escapeHtml(enName) : (KJV_READY ? "" : "KJV 未載入");
+
     return `
-      <div class="bookItem" data-code="${b.Code}">
+      <div class="bookItem" data-book="${escapeHtmlAttr(b.book)}">
         <div class="names">
-          <div class="zh">${isNow ? "✅ " : ""}${escapeHtml(b.Name)}</div>
-          <div class="en">${escapeHtml(b.NameE)} · Code: ${escapeHtml(b.Code)}</div>
+          <div class="zh">${isNow ? "✅ " : ""}${escapeHtml(b.book)}</div>
+          <div class="en">${enLine}</div>
+          <div class="short">${short}</div>
         </div>
-        <div class="badge">${b.Chapters || "—"} 章</div>
+        <div class="badge">${(b.chapters?.length || "—")} 章</div>
       </div>
     `;
   }).join("");
 }
+
 function openBookPopup(){
   overlay.classList.add("show");
   overlay.setAttribute("aria-hidden","false");
@@ -761,22 +1025,51 @@ bookSearchEl.addEventListener("input", () => rebuildBookPopupList(bookSearchEl.v
 bookListEl.addEventListener("click", (e) => {
   const item = e.target.closest(".bookItem");
   if(!item) return;
-  const code = (item.getAttribute("data-code") || "").toLowerCase();
-  if(!code) return;
+  const bookName = item.getAttribute("data-book");
+  if(!bookName) return;
 
-  elBook.value = code;
+  elBook.value = bookName;
 
-  // 換書卷回到 1章1節
-  elCh.value = 1;
-  elV.value = 1;
-  syncVerseToSelect();
+  elCh.value = "1";
+  rebuildChapterSelect();
+  elV.value = "1";
+  rebuildVerseSelect();
 
   updateBookButtonLabel();
   updateMetaAndLimits();
   updateFavButton();
   updateReadRate();
   closeBookPopup();
+
+  showBible();
 });
+
+/* 事件：切換 OT/NT */
+elTest.addEventListener("change", () => {
+  const list = currentBookList();
+  const first = list[0] || BIBLE_ALL[0];
+  if(first) elBook.value = first.book;
+
+  elCh.value = "1";
+  elV.value = "1";
+
+  updateBookButtonLabel();
+  updateMetaAndLimits();
+  updateFavButton();
+  updateReadRate();
+  rebuildBookPopupList("");
+  showBible();
+});
+
+/* ✅ 章：選了就重建節＋顯示 */
+elCh.addEventListener("change", () => {
+  elV.value = "1";
+  rebuildVerseSelect();
+  showBible();
+});
+
+/* ✅ 節：選了就顯示 */
+elV.addEventListener("change", () => showBible());
 
 function escapeHtml(str){
   return String(str ?? "")
@@ -786,48 +1079,19 @@ function escapeHtml(str){
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
-
-/* 事件：約切換 */
-elTest.addEventListener("change", () => {
-  const first = (BOOKS_BY_TEST[elTest.value] || [])[0];
-  if(first) elBook.value = first.Code;
-
-  elCh.value = 1;
-  elV.value = 1;
-  syncVerseToSelect();
-
-  updateBookButtonLabel();
-  updateMetaAndLimits();
-  updateFavButton();
-  updateReadRate();
-  rebuildBookPopupList("");
-});
-
-/* 章：桌機 input 改變時，同步 select */
-elCh.addEventListener("input", clampChapter);
-elCh.addEventListener("change", clampChapter);
-/* 章：手機 select 改變時，同步 input */
-elChSel.addEventListener("change", () => {
-  elCh.value = parseInt(elChSel.value || "1", 10) || 1;
-  clampChapter();
-});
-
-/* ✅ 節：桌機 input 改變時，同步手機 select */
-elV.addEventListener("input", clampVerse);
-elV.addEventListener("change", clampVerse);
-/* ✅ 節：手機 select 改變時，同步桌機 input */
-elVSel.addEventListener("change", () => {
-  elV.value = parseInt(elVSel.value || "1", 10) || 1;
-  clampVerse();
-});
-
-btnSearch.addEventListener("click", searchBible);
+function escapeHtmlAttr(str){
+  return escapeHtml(str).replaceAll('"', "&quot;");
+}
 
 /* 啟動 */
 (async function boot(){
   try{
-    await loadBooks();
-    searchBible();
+    await loadBible();
+    if(!elCh.value) elCh.value = "1";
+    if(!elV.value) elV.value = "1";
+    rebuildChapterSelect();
+    rebuildVerseSelect();
+    showBible();
   }catch(e){
     showError(String(e?.message || e));
   }
