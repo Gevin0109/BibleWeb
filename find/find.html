@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>查經頁面（套用 BibleBooksData.json + CORS Proxy）</title>
+<style>
+  :root{
+    --bg:#0b1f3a;
+    --yellow:#ffe93a;
+    --btn:#35d56b;
+    --btn2:#1bbd52;
+    --danger:#a30000;
+    --card:rgba(255,255,255,.10);
+    --stroke:rgba(255,255,255,.16);
+    --shadow:0 18px 40px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:"Noto Sans TC",system-ui,-apple-system,"Segoe UI","Microsoft JhengHei",sans-serif;
+    background:var(--bg);
+    color:#fff;
+    text-align:center;
+    padding:18px 14px 26px;
+  }
+  h1{margin:0 0 10px;font-size:26px}
+  .panel{
+    max-width:980px;
+    margin:0 auto;
+    background:var(--card);
+    border:2px solid var(--stroke);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:12px 12px 14px;
+  }
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:center;
+    padding:10px 6px 6px;
+  }
+  .controls .grp{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  select,input{
+    padding:10px 10px;
+    border-radius:12px;
+    border:2px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    outline:none;
+    font-weight:800;
+  }
+  input{width:86px;text-align:center}
+  button{
+    padding:11px 14px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(180deg,var(--btn),var(--btn2));
+    color:#fff;
+    font-weight:1000;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  button:disabled{background:#8a8a8a;cursor:not-allowed;box-shadow:none}
+  .meta{
+    margin:10px 0 0;
+    font-weight:900;
+    color:rgba(255,255,255,.86);
+  }
+  .verseZh{
+    margin:14px 0 10px;
+    font-size:clamp(24px,3.2vw,40px);
+    font-weight:1000;
+    color:var(--yellow);
+    line-height:1.35;
+    white-space:pre-wrap;
+  }
+  .verseEn{
+    margin:0 0 10px;
+    font-size:clamp(18px,2.6vw,32px);
+    font-weight:1000;
+    color:var(--yellow);
+    line-height:1.35;
+    white-space:pre-wrap;
+  }
+  .error{
+    display:none;
+    margin:10px auto 0;
+    max-width:980px;
+    background:rgba(163,0,0,.78);
+    border:2px solid rgba(255,255,255,.18);
+    border-radius:14px;
+    padding:10px 12px;
+    font-weight:1000;
+  }
+  .barWrap{max-width:980px;margin:14px auto 0}
+  .bar{
+    height:28px;
+    background:#fff;
+    border-radius:14px;
+    overflow:hidden;
+    position:relative;
+    border:2px solid rgba(0,0,0,.12);
+  }
+  .barFill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#3aa0ff,#00d7ff);
+  }
+  .barLabel{
+    position:absolute; inset:0;
+    display:grid; place-items:center;
+    color:#0b1f3a;
+    font-weight:1000;
+  }
+  .hint{
+    margin-top:8px;
+    font-size:13px;
+    color:rgba(255,255,255,.72);
+    line-height:1.45;
+  }
+  .sep{opacity:.6}
+</style>
+</head>
+<body>
+
+<h1>查經頁面</h1>
+
+<div class="panel">
+  <div class="controls">
+    <div class="grp">
+      <span>語言</span>
+      <select id="lang">
+        <option value="both">中英（cut + niv）</option>
+        <option value="cut">只中文（cut）</option>
+        <option value="niv">只英文（niv）</option>
+      </select>
+    </div>
+
+    <div class="grp">
+      <span>約</span>
+      <select id="testament">
+        <option value="OT">舊約 Old</option>
+        <option value="NT" selected>新約 New</option>
+      </select>
+    </div>
+
+    <div class="grp">
+      <span>書卷</span>
+      <select id="book"></select>
+    </div>
+
+    <div class="grp">
+      <span>章</span>
+      <input id="chapter" type="number" value="3" min="1" step="1">
+      <span class="sep">/</span>
+      <span id="maxCh">—</span>
+    </div>
+
+    <div class="grp">
+      <span>節</span>
+      <input id="verse" type="number" value="3" min="1" step="1">
+    </div>
+
+    <div class="grp">
+      <button id="btnSearch">搜尋</button>
+      <button id="favBtn">加入收藏</button>
+    </div>
+  </div>
+
+  <div class="meta" id="metaLine">（正在載入書卷資料…）</div>
+
+  <div class="verseZh" id="zh"></div>
+  <div class="verseEn" id="en"></div>
+</div>
+
+<div class="error" id="error"></div>
+
+<div class="barWrap">
+  <div class="bar">
+    <div class="barFill" id="barFill"></div>
+    <div class="barLabel" id="barLabel">0%</div>
+  </div>
+  <div class="hint" id="rateHint">
+    閱讀率：以「目前書卷 Verses（總節數）」為分母；閱讀紀錄只在中文 cut 成功取得時才會記錄。
+  </div>
+</div>
+
+<script>
+/* =========================
+  你的 JSON 路徑
+========================= */
+const BOOKS_URL = "assets/BibleBooksData.json";
+
+/* =========================
+  localStorage keys
+========================= */
+const LS_FAV  = "bible_fav_v1";       // [{id, code, name, nameE, ch, v, zh, en, ts}]
+const LS_READ = "bible_read_cut_v1";  // ["code/ch:v", ...] (以節為單位)
+
+/* =========================
+  DOM
+========================= */
+const elLang = document.getElementById("lang");
+const elTest = document.getElementById("testament");
+const elBook = document.getElementById("book");
+const elCh   = document.getElementById("chapter");
+const elV    = document.getElementById("verse");
+const elMaxCh= document.getElementById("maxCh");
+
+const elZh   = document.getElementById("zh");
+const elEn   = document.getElementById("en");
+const elErr  = document.getElementById("error");
+const elMeta = document.getElementById("metaLine");
+
+const btnSearch = document.getElementById("btnSearch");
+const btnFav    = document.getElementById("favBtn");
+
+const barFill  = document.getElementById("barFill");
+const barLabel = document.getElementById("barLabel");
+
+/* =========================
+  書卷資料
+  統一格式：
+  {Id, Code, Name, NameE, Chapters, Verses, Testament:"OT"/"NT"}
+========================= */
+let BOOKS_ALL = [];
+let BOOKS_BY_TEST = { OT: [], NT: [] };
+
+/* =========================
+  工具：localStorage
+========================= */
+function lsGet(key, fallback){
+  try{
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  }catch(e){ return fallback; }
+}
+function lsSet(key, value){
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+/* =========================
+  判斷舊約/新約（用 Id）
+  常見：1~39 舊約；40~66 新約
+========================= */
+function inferTestamentById(id){
+  const n = Number(id);
+  if(!Number.isFinite(n)) return "OT";
+  return (n <= 39) ? "OT" : "NT";
+}
+
+/* =========================
+  載入 JSON 並建立下拉選單
+========================= */
+async function loadBooks(){
+  const res = await fetch(BOOKS_URL, { cache:"no-store" });
+  if(!res.ok) throw new Error("讀不到 BibleBooksData.json（路徑或伺服器設定）");
+
+  const raw = await res.json();
+  if(!Array.isArray(raw)) throw new Error("BibleBooksData.json 必須是 Array");
+
+  BOOKS_ALL = raw.map(b => ({
+    Id: b.Id,
+    Code: String(b.Code || "").trim().toLowerCase(),
+    Name: b.Name || "",
+    NameE: b.NameE || "",
+    Chapters: Number(b.Chapters || 0),
+    Verses: Number(b.Verses || 0),
+    Testament: inferTestamentById(b.Id),
+  })).filter(b => b.Code);
+
+  BOOKS_BY_TEST.OT = BOOKS_ALL.filter(b => b.Testament === "OT");
+  BOOKS_BY_TEST.NT = BOOKS_ALL.filter(b => b.Testament === "NT");
+
+  // 預設：如果 NT 有資料就選 NT，不然選 OT
+  elTest.value = BOOKS_BY_TEST.NT.length ? "NT" : "OT";
+
+  rebuildBookOptions();
+}
+
+/* =========================
+  依約重建書卷下拉
+========================= */
+function rebuildBookOptions(){
+  const t = elTest.value;
+  const list = BOOKS_BY_TEST[t] || [];
+  elBook.innerHTML = list.map(b => (
+    `<option value="${b.Code}" data-id="${b.Id}">${b.Name} / ${b.NameE}</option>`
+  )).join("");
+
+  if(!list.length){
+    elBook.innerHTML = `<option value="luk">（此約無資料）</option>`;
+  }
+
+  // 選第一個後更新 meta
+  updateMetaAndLimits();
+  updateFavButton();
+  updateReadRate();
+}
+
+/* =========================
+  取得目前選到的書卷物件
+========================= */
+function getSelectedBook(){
+  const code = (elBook.value || "").toLowerCase();
+  return BOOKS_ALL.find(b => b.Code === code) || null;
+}
+
+/* =========================
+  限制章：1~Chapters
+========================= */
+function clampChapter(){
+  const b = getSelectedBook();
+  const max = b?.Chapters || 999;
+  let v = parseInt(elCh.value || "1", 10);
+  if(!Number.isFinite(v) || v < 1) v = 1;
+  if(v > max) v = max;
+  elCh.value = v;
+  elCh.max = max;
+  elMaxCh.textContent = (b?.Chapters ? b.Chapters : "—");
+}
+
+/* =========================
+  顯示 meta
+========================= */
+function updateMetaAndLimits(){
+  clampChapter();
+  const b = getSelectedBook();
+  const code = b?.Code || elBook.value;
+  const name = b?.Name || "";
+  const nameE = b?.NameE || "";
+  const verses = b?.Verses || 0;
+  const chMax = b?.Chapters || 0;
+
+  elMeta.textContent =
+    `${name} ${nameE} ｜ Code: ${code} ｜ Chapters: ${chMax || "—"} ｜ Verses: ${verses || "—"}`;
+}
+
+/* =========================
+  顯示錯誤
+========================= */
+function showError(msg){
+  elErr.style.display = "block";
+  elErr.textContent = msg;
+}
+function hideError(){
+  elErr.style.display = "none";
+  elErr.textContent = "";
+}
+
+/* =========================
+  解析 ibibles 回傳 HTML
+========================= */
+function parseIbiblesFirstVerse(html){
+  // <small>3</small> ... <br>
+  const re = /<small>([^<]+)<\/small>\s*([^<]+)<br>/;
+  const m = html.match(re);
+  return m ? (m[2] || "").trim() : null;
+}
+
+/* =========================
+  A 方案：CORS proxy (allorigins)
+========================= */
+async function fetchVerseViaProxy(lang, bookCode, ch, v){
+  const target = `https://ibibles.net/quote.php?${lang}-${bookCode}/${ch}:${v}`;
+  const url = "https://api.allorigins.win/raw?url=" + encodeURIComponent(target);
+  const res = await fetch(url, { cache:"no-store" });
+  if(!res.ok) throw new Error("network");
+  const html = await res.text();
+  return parseIbiblesFirstVerse(html);
+}
+
+/* =========================
+  Key（以節為單位）
+========================= */
+function verseKey(){
+  const code = (elBook.value || "").toLowerCase();
+  const ch = Math.max(1, parseInt(elCh.value || "1", 10));
+  const v  = Math.max(1, parseInt(elV.value  || "1", 10));
+  return `${code}/${ch}:${v}`;
+}
+
+/* =========================
+  收藏
+========================= */
+function getFavList(){ return lsGet(LS_FAV, []); }
+function isFavorited(){
+  const id = verseKey();
+  return getFavList().some(x => x.id === id);
+}
+function updateFavButton(){
+  const yes = isFavorited();
+  if(yes){
+    btnFav.disabled = true;
+    btnFav.textContent = "已收藏";
+  }else{
+    btnFav.disabled = false;
+    btnFav.textContent = "加入收藏";
+  }
+}
+btnFav.addEventListener("click", () => {
+  if(btnFav.disabled) return;
+
+  const b = getSelectedBook();
+  const id = verseKey();
+  const list = getFavList();
+
+  list.unshift({
+    id,
+    code: (b?.Code || elBook.value || "").toLowerCase(),
+    name: b?.Name || "",
+    nameE: b?.NameE || "",
+    ch: parseInt(elCh.value||"1",10),
+    v: parseInt(elV.value||"1",10),
+    zh: elZh.textContent || "",
+    en: elEn.textContent || "",
+    ts: Date.now()
+  });
+
+  lsSet(LS_FAV, list);
+  updateFavButton();
+  alert("已加入收藏（localStorage）");
+});
+
+/* =========================
+  閱讀率（只算目前書卷）
+  讀取：LS_READ 裡是 ["code/ch:v"]
+========================= */
+function getReadSet(){ return new Set(lsGet(LS_READ, [])); }
+function saveReadSet(set){ lsSet(LS_READ, Array.from(set)); }
+
+function markRead(){
+  const set = getReadSet();
+  set.add(verseKey());
+  saveReadSet(set);
+}
+
+function updateReadRate(){
+  const b = getSelectedBook();
+  const code = (b?.Code || elBook.value || "").toLowerCase();
+  const total = Number(b?.Verses || 0);
+
+  const set = getReadSet();
+  let count = 0;
+  for(const k of set){
+    if(k.startsWith(code + "/")) count++;
+  }
+
+  // 若沒有 total，就只顯示 0%
+  let pct = 0;
+  if(total > 0){
+    pct = Math.max(0, Math.min(100, Math.round((count / total) * 100)));
+  }
+
+  barFill.style.width = pct + "%";
+  barLabel.textContent = pct + "%";
+}
+
+/* =========================
+  搜尋（中英）
+========================= */
+async function searchBible(){
+  hideError();
+  updateMetaAndLimits();
+
+  const b = getSelectedBook();
+  const bookCode = (b?.Code || elBook.value || "").toLowerCase();
+
+  const ch = Math.max(1, parseInt(elCh.value || "1", 10));
+  const v  = Math.max(1, parseInt(elV.value  || "1", 10));
+
+  elZh.textContent = "（載入中…）";
+  elEn.textContent = "";
+
+  const mode = elLang.value;
+
+  try{
+    let zh = "", en = "";
+
+    if(mode === "both" || mode === "cut"){
+      zh = await fetchVerseViaProxy("cut", bookCode, ch, v);
+      if(!zh){
+        elZh.textContent = "";
+        elEn.textContent = "";
+        showError("查無此章節！（或書卷 Code 不符合 ibibles 代碼）");
+        return;
+      }
+      elZh.textContent = zh;
+
+      // ✅ 只有中文成功才記閱讀
+      markRead();
+    }else{
+      elZh.textContent = "";
+    }
+
+    if(mode === "both" || mode === "niv"){
+      en = await fetchVerseViaProxy("niv", bookCode, ch, v);
+      elEn.textContent = en || "";
+    }
+
+    updateFavButton();
+    updateReadRate();
+  }catch(e){
+    elZh.textContent = "";
+    elEn.textContent = "";
+    showError("您的網路未連線 無法取得資料！（或 Proxy 暫時不可用）");
+  }
+}
+
+/* =========================
+  事件：變更選單/章節時
+========================= */
+elTest.addEventListener("change", () => {
+  rebuildBookOptions();
+});
+elBook.addEventListener("change", () => {
+  updateMetaAndLimits();
+  updateFavButton();
+  updateReadRate();
+});
+elCh.addEventListener("input", () => {
+  clampChapter();
+});
+elCh.addEventListener("change", () => {
+  clampChapter();
+});
+btnSearch.addEventListener("click", searchBible);
+
+/* =========================
+  啟動
+========================= */
+(async function boot(){
+  try{
+    await loadBooks();
+    updateMetaAndLimits();
+    updateFavButton();
+    updateReadRate();
+    // 預設載入一筆
+    searchBible();
+  }catch(e){
+    showError(String(e?.message || e));
+  }
+})();
+</script>
+
+</body>
+</html>

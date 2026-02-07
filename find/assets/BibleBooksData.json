@@ -1,0 +1,530 @@
+[
+  {
+    "Id": 1,
+    "Code": "ge",
+    "NameE": "Genesis",
+    "Name": "創世記",
+    "Chapters": 50,
+    "Verses": 1533
+  },
+  {
+    "Id": 2,
+    "Code": "exo",
+    "NameE": "Exodus",
+    "Name": "出埃及記",
+    "Chapters": 40,
+    "Verses": 1213
+  },
+  {
+    "Id": 3,
+    "Code": "lev",
+    "NameE": "Leviticus",
+    "Name": "利未記",
+    "Chapters": 27,
+    "Verses": 859
+  },
+  {
+    "Id": 4,
+    "Code": "num",
+    "NameE": "Numbers",
+    "Name": "民數記",
+    "Chapters": 36,
+    "Verses": 1288
+  },
+  {
+    "Id": 5,
+    "Code": "deu",
+    "NameE": "Deuteronomy",
+    "Name": "申命記",
+    "Chapters": 34,
+    "Verses": 959
+  },
+  {
+    "Id": 6,
+    "Code": "josh",
+    "NameE": "Joshua",
+    "Name": "約書亞記",
+    "Chapters": 24,
+    "Verses": 658
+  },
+  {
+    "Id": 7,
+    "Code": "jdgs",
+    "NameE": "Judges",
+    "Name": "士師記",
+    "Chapters": 21,
+    "Verses": 618
+  },
+  {
+    "Id": 8,
+    "Code": "ruth",
+    "NameE": "Ruth",
+    "Name": "路得記",
+    "Chapters": 4,
+    "Verses": 85
+  },
+  {
+    "Id": 9,
+    "Code": "1sm",
+    "NameE": "1 Samuel",
+    "Name": "撒母耳記上",
+    "Chapters": 31,
+    "Verses": 810
+  },
+  {
+    "Id": 10,
+    "Code": "2sm",
+    "NameE": "2 Samuel",
+    "Name": "撒母耳記下",
+    "Chapters": 24,
+    "Verses": 695
+  },
+  {
+    "Id": 11,
+    "Code": "1ki",
+    "NameE": "1 Kings",
+    "Name": "列王記上",
+    "Chapters": 22,
+    "Verses": 816
+  },
+  {
+    "Id": 12,
+    "Code": "2ki",
+    "NameE": "2 Kings",
+    "Name": "列王記下",
+    "Chapters": 25,
+    "Verses": 719
+  },
+  {
+    "Id": 13,
+    "Code": "1chr",
+    "NameE": "1 Chronicles",
+    "Name": "歷代志上",
+    "Chapters": 29,
+    "Verses": 942
+  },
+  {
+    "Id": 14,
+    "Code": "2chr",
+    "NameE": "2 Chronicles",
+    "Name": "歷代志下",
+    "Chapters": 36,
+    "Verses": 822
+  },
+  {
+    "Id": 15,
+    "Code": "ezra",
+    "NameE": "Ezra",
+    "Name": "以斯拉記",
+    "Chapters": 10,
+    "Verses": 280
+  },
+  {
+    "Id": 16,
+    "Code": "neh",
+    "NameE": "Nehemiah",
+    "Name": "尼希米記",
+    "Chapters": 13,
+    "Verses": 406
+  },
+  {
+    "Id": 17,
+    "Code": "est",
+    "NameE": "Esther",
+    "Name": "以斯帖記",
+    "Chapters": 10,
+    "Verses": 167
+  },
+  {
+    "Id": 18,
+    "Code": "job",
+    "NameE": "Job",
+    "Name": "約伯記",
+    "Chapters": 42,
+    "Verses": 1070
+  },
+  {
+    "Id": 19,
+    "Code": "psa",
+    "NameE": "Psalms",
+    "Name": "詩篇",
+    "Chapters": 150,
+    "Verses": 2461
+  },
+  {
+    "Id": 20,
+    "Code": "prv",
+    "NameE": "Proverbs",
+    "Name": "箴言",
+    "Chapters": 31,
+    "Verses": 915
+  },
+  {
+    "Id": 21,
+    "Code": "eccl",
+    "NameE": "Ecclesiastes",
+    "Name": "傳道書",
+    "Chapters": 12,
+    "Verses": 222
+  },
+  {
+    "Id": 22,
+    "Code": "ssol",
+    "NameE": "Song of Solomon",
+    "Name": "雅歌",
+    "Chapters": 8,
+    "Verses": 117
+  },
+  {
+    "Id": 23,
+    "Code": "isa",
+    "NameE": "Isaiah",
+    "Name": "以賽亞書",
+    "Chapters": 66,
+    "Verses": 1292
+  },
+  {
+    "Id": 24,
+    "Code": "jer",
+    "NameE": "Jeremiah",
+    "Name": "耶利米書",
+    "Chapters": 52,
+    "Verses": 1364
+  },
+  {
+    "Id": 25,
+    "Code": "lam",
+    "NameE": "Lamentations",
+    "Name": "耶利米哀歌",
+    "Chapters": 5,
+    "Verses": 154
+  },
+  {
+    "Id": 26,
+    "Code": "eze",
+    "NameE": "Ezekiel",
+    "Name": "以西結書",
+    "Chapters": 48,
+    "Verses": 1273
+  },
+  {
+    "Id": 27,
+    "Code": "dan",
+    "NameE": "Daniel",
+    "Name": "但以理書",
+    "Chapters": 12,
+    "Verses": 357
+  },
+  {
+    "Id": 28,
+    "Code": "hos",
+    "NameE": "Hosea",
+    "Name": "何西阿書",
+    "Chapters": 14,
+    "Verses": 197
+  },
+  {
+    "Id": 29,
+    "Code": "joel",
+    "NameE": "Joel",
+    "Name": "約珥書",
+    "Chapters": 3,
+    "Verses": 73
+  },
+  {
+    "Id": 30,
+    "Code": "amos",
+    "NameE": "Amos",
+    "Name": "阿摩司書",
+    "Chapters": 9,
+    "Verses": 146
+  },
+  {
+    "Id": 31,
+    "Code": "obad",
+    "NameE": "Obadiah",
+    "Name": "俄巴底亞書",
+    "Chapters": 1,
+    "Verses": 21
+  },
+  {
+    "Id": 32,
+    "Code": "jonah",
+    "NameE": "Jonah",
+    "Name": "約拿書",
+    "Chapters": 4,
+    "Verses": 48
+  },
+  {
+    "Id": 33,
+    "Code": "mic",
+    "NameE": "Micah",
+    "Name": "彌迦書",
+    "Chapters": 7,
+    "Verses": 105
+  },
+  {
+    "Id": 34,
+    "Code": "nahum",
+    "NameE": "Nahum",
+    "Name": "那鴻書",
+    "Chapters": 3,
+    "Verses": 47
+  },
+  {
+    "Id": 35,
+    "Code": "hab",
+    "NameE": "Habakkuk",
+    "Name": "哈巴谷書",
+    "Chapters": 3,
+    "Verses": 56
+  },
+  {
+    "Id": 36,
+    "Code": "zep",
+    "NameE": "Zephaniah",
+    "Name": "西番雅書",
+    "Chapters": 3,
+    "Verses": 53
+  },
+  {
+    "Id": 37,
+    "Code": "hag",
+    "NameE": "Haggai",
+    "Name": "哈該書",
+    "Chapters": 2,
+    "Verses": 38
+  },
+  {
+    "Id": 38,
+    "Code": "zec",
+    "NameE": "Zechariah",
+    "Name": "撒迦利亞書",
+    "Chapters": 14,
+    "Verses": 211
+  },
+  {
+    "Id": 39,
+    "Code": "mal",
+    "NameE": "Malachi",
+    "Name": "瑪拉基書",
+    "Chapters": 4,
+    "Verses": 55
+  },
+  {
+    "Id": 40,
+    "Code": "mat",
+    "NameE": "Matthew",
+    "Name": "馬太福音",
+    "Chapters": 28,
+    "Verses": 1071
+  },
+  {
+    "Id": 41,
+    "Code": "mark",
+    "NameE": "Mark",
+    "Name": "馬可福音",
+    "Chapters": 16,
+    "Verses": 678
+  },
+  {
+    "Id": 42,
+    "Code": "luke",
+    "NameE": "Luke",
+    "Name": "路加福音",
+    "Chapters": 24,
+    "Verses": 1151
+  },
+  {
+    "Id": 43,
+    "Code": "john",
+    "NameE": "John",
+    "Name": "約翰福音",
+    "Chapters": 21,
+    "Verses": 879
+  },
+  {
+    "Id": 44,
+    "Code": "acts",
+    "NameE": "Acts",
+    "Name": "使徒行傳",
+    "Chapters": 28,
+    "Verses": 1006
+  },
+  {
+    "Id": 45,
+    "Code": "rom",
+    "NameE": "Romans",
+    "Name": "羅馬書",
+    "Chapters": 16,
+    "Verses": 433
+  },
+  {
+    "Id": 46,
+    "Code": "1cor",
+    "NameE": "1 Corinthians",
+    "Name": "哥林多前書",
+    "Chapters": 16,
+    "Verses": 437
+  },
+  {
+    "Id": 47,
+    "Code": "2cor",
+    "NameE": "2 Corinthians",
+    "Name": "哥林多後書",
+    "Chapters": 13,
+    "Verses": 257
+  },
+  {
+    "Id": 48,
+    "Code": "gal",
+    "NameE": "Galatians",
+    "Name": "加拉太書",
+    "Chapters": 6,
+    "Verses": 149
+  },
+  {
+    "Id": 49,
+    "Code": "eph",
+    "NameE": "Ephesians",
+    "Name": "以弗所書",
+    "Chapters": 6,
+    "Verses": 155
+  },
+  {
+    "Id": 50,
+    "Code": "phi",
+    "NameE": "Philippians",
+    "Name": "腓立比書",
+    "Chapters": 4,
+    "Verses": 104
+  },
+  {
+    "Id": 51,
+    "Code": "col",
+    "NameE": "Colossians",
+    "Name": "歌羅西書",
+    "Chapters": 4,
+    "Verses": 95
+  },
+  {
+    "Id": 52,
+    "Code": "1th",
+    "NameE": "1 Thessalonians",
+    "Name": "帖撒羅尼迦前書",
+    "Chapters": 5,
+    "Verses": 89
+  },
+  {
+    "Id": 53,
+    "Code": "2th",
+    "NameE": "2 Thessalonians",
+    "Name": "帖撒羅尼迦後書",
+    "Chapters": 3,
+    "Verses": 47
+  },
+  {
+    "Id": 54,
+    "Code": "1tim",
+    "NameE": "1 Timothy",
+    "Name": "提摩太前書",
+    "Chapters": 6,
+    "Verses": 113
+  },
+  {
+    "Id": 55,
+    "Code": "2tim",
+    "NameE": "2 Timothy",
+    "Name": "提摩太後書",
+    "Chapters": 4,
+    "Verses": 83
+  },
+  {
+    "Id": 56,
+    "Code": "titus",
+    "NameE": "Titus",
+    "Name": "提多書",
+    "Chapters": 3,
+    "Verses": 46
+  },
+  {
+    "Id": 57,
+    "Code": "phmn",
+    "NameE": "Philemon",
+    "Name": "腓利門書",
+    "Chapters": 1,
+    "Verses": 25
+  },
+  {
+    "Id": 58,
+    "Code": "heb",
+    "NameE": "Hebrews",
+    "Name": "希伯來書",
+    "Chapters": 13,
+    "Verses": 303
+  },
+  {
+    "Id": 59,
+    "Code": "jas",
+    "NameE": "James",
+    "Name": "雅各書",
+    "Chapters": 5,
+    "Verses": 108
+  },
+  {
+    "Id": 60,
+    "Code": "1pet",
+    "NameE": "1 Peter",
+    "Name": "彼得前書",
+    "Chapters": 5,
+    "Verses": 105
+  },
+  {
+    "Id": 61,
+    "Code": "2pet",
+    "NameE": "2 Peter",
+    "Name": "彼得後書",
+    "Chapters": 3,
+    "Verses": 61
+  },
+  {
+    "Id": 62,
+    "Code": "1jn",
+    "NameE": "1 John",
+    "Name": "約翰一書",
+    "Chapters": 5,
+    "Verses": 105
+  },
+  {
+    "Id": 63,
+    "Code": "2jn",
+    "NameE": "2 John",
+    "Name": "約翰二書",
+    "Chapters": 1,
+    "Verses": 13
+  },
+  {
+    "Id": 64,
+    "Code": "3jn",
+    "NameE": "3 John",
+    "Name": "約翰三書",
+    "Chapters": 1,
+    "Verses": 14
+  },
+  {
+    "Id": 65,
+    "Code": "jude",
+    "NameE": "Jude",
+    "Name": "猶大書",
+    "Chapters": 1,
+    "Verses": 25
+  },
+  {
+    "Id": 66,
+    "Code": "rev",
+    "NameE": "Revelation",
+    "Name": "啟示錄",
+    "Chapters": 22,
+    "Verses": 404
+  }
+]
