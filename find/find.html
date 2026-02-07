@@ -14,6 +14,12 @@
     --card:rgba(255,255,255,.10);
     --stroke:rgba(255,255,255,.16);
     --shadow:0 18px 40px rgba(0,0,0,.25);
+
+    --popBg:#0a2346;
+    --popBg2:#0b1f3a;
+    --popItem:rgba(255,255,255,.10);
+    --popItemHover:rgba(255,255,255,.16);
+    --popStroke:rgba(255,255,255,.18);
   }
   *{box-sizing:border-box}
   body{
@@ -25,6 +31,7 @@
     padding:18px 14px 26px;
   }
   h1{margin:0 0 10px;font-size:26px}
+
   .panel{
     max-width:980px;
     margin:0 auto;
@@ -49,6 +56,7 @@
     flex-wrap:wrap;
     justify-content:center;
   }
+
   select,input{
     padding:10px 10px;
     border-radius:12px;
@@ -58,7 +66,9 @@
     outline:none;
     font-weight:800;
   }
+  option{ background:#0b1f3a; color:#fff; }
   input{width:86px;text-align:center}
+
   button{
     padding:11px 14px;
     border:none;
@@ -70,10 +80,12 @@
     box-shadow:var(--shadow);
   }
   button:disabled{background:#8a8a8a;cursor:not-allowed;box-shadow:none}
+
   .meta{
     margin:10px 0 0;
     font-weight:900;
     color:rgba(255,255,255,.86);
+    line-height:1.35;
   }
   .verseZh{
     margin:14px 0 10px;
@@ -128,6 +140,154 @@
     line-height:1.45;
   }
   .sep{opacity:.6}
+
+  /* ===== 自訂「書卷」下拉 ===== */
+  .bookWrap{ position:relative; display:inline-block; }
+  .bookBtn{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    border:2px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    font-weight:900;
+    cursor:pointer;
+    min-width:min(380px, 82vw);
+    justify-content:space-between;
+    box-shadow:none;
+  }
+  .bookBtn:active{ transform:translateY(1px); }
+  .bookBtn .label{
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:calc(100% - 40px);
+  }
+  .chev{
+    width:0;height:0;
+    border-left:7px solid transparent;
+    border-right:7px solid transparent;
+    border-top:9px solid rgba(255,255,255,.86);
+    opacity:.9;
+    flex:0 0 auto;
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    display:none;
+    z-index:999;
+  }
+  .overlay.show{ display:block; }
+  .bookPop{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:min(560px, 92vw);
+    max-height:min(72vh, 640px);
+    background:linear-gradient(180deg,var(--popBg),var(--popBg2));
+    border:2px solid var(--popStroke);
+    border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    overflow:hidden;
+  }
+  .bookPopHeader{
+    padding:12px 12px 10px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    border-bottom:1px solid rgba(255,255,255,.14);
+  }
+  .bookPopHeader .title{ font-weight:1000; letter-spacing:.5px; }
+  .bookPopHeader .close{
+    margin-left:auto;
+    padding:8px 10px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    font-weight:1000;
+    cursor:pointer;
+  }
+  .bookSearch{
+    width:100%;
+    padding:10px 10px;
+    border-radius:12px;
+    border:2px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    outline:none;
+    font-weight:900;
+  }
+  .bookList{
+    padding:10px;
+    overflow:auto;
+    max-height:calc(min(72vh, 640px) - 110px);
+    -webkit-overflow-scrolling:touch;
+  }
+  .bookItem{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px 12px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    font-weight:900;
+    cursor:pointer;
+    text-align:left;
+    margin-bottom:10px;
+  }
+  .bookItem:hover{ background:rgba(255,255,255,.16); }
+  .bookItem .names{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    overflow:hidden;
+  }
+  .bookItem .names .zh{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .bookItem .names .en{
+    font-size:12px;
+    color:rgba(255,255,255,.74);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .badge{
+    flex:0 0 auto;
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.18);
+    color:rgba(255,255,255,.9);
+  }
+
+  /* ✅ 手機：章/節 用 select；桌機：章/節 用 input（同一格只會出現一個） */
+  .chInput,.vInput{ display:inline-block; }
+  .chSelect,.vSelect{ display:none; }
+
+  @media (max-width:640px){
+    .chInput,.vInput{ display:none; }
+    .chSelect,.vSelect{ display:inline-block; }
+  }
+
+  @media (max-width:520px){
+    .bookBtn{ min-width:min(320px, 88vw); }
+    .controls{ gap:8px; }
+  }
 </style>
 </head>
 <body>
@@ -155,19 +315,29 @@
 
     <div class="grp">
       <span>書卷</span>
-      <select id="book"></select>
+      <div class="bookWrap">
+        <button id="bookBtn" class="bookBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
+          <span class="label" id="bookBtnLabel">（載入中…）</span>
+          <span class="chev" aria-hidden="true"></span>
+        </button>
+        <input id="book" type="hidden" value="">
+      </div>
     </div>
 
+    <!-- 章（只一組） -->
     <div class="grp">
       <span>章</span>
-      <input id="chapter" type="number" value="3" min="1" step="1">
+      <input id="chapter" class="chInput" type="number" value="1" min="1" step="1">
+      <select id="chapterSel" class="chSelect"></select>
       <span class="sep">/</span>
       <span id="maxCh">—</span>
     </div>
 
+    <!-- ✅ 節（只一組）：手機用 select，固定 1~180 -->
     <div class="grp">
       <span>節</span>
-      <input id="verse" type="number" value="3" min="1" step="1">
+      <input id="verse" class="vInput" type="number" value="1" min="1" step="1">
+      <select id="verseSel" class="vSelect"></select>
     </div>
 
     <div class="grp">
@@ -189,32 +359,46 @@
     <div class="barFill" id="barFill"></div>
     <div class="barLabel" id="barLabel">0%</div>
   </div>
-  <div class="hint" id="rateHint">
+  <div class="hint">
     閱讀率：以「目前書卷 Verses（總節數）」為分母；閱讀紀錄只在中文 cut 成功取得時才會記錄。
   </div>
 </div>
 
+<!-- 書卷彈窗 -->
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="bookPop" role="dialog" aria-modal="true" aria-label="選擇書卷">
+    <div class="bookPopHeader">
+      <div class="title">選擇書卷</div>
+      <button class="close" id="bookClose" type="button">關閉</button>
+    </div>
+    <div style="padding:10px 12px 0;">
+      <input id="bookSearch" class="bookSearch" placeholder="搜尋：中文 / English / Code（例如 mat, gal）" autocomplete="off">
+    </div>
+    <div class="bookList" id="bookList"></div>
+  </div>
+</div>
+
 <script>
-/* =========================
-  你的 JSON 路徑
-========================= */
 const BOOKS_URL = "assets/BibleBooksData.json";
+const LS_FAV  = "bible_fav_v1";
+const LS_READ = "bible_read_cut_v1";
 
-/* =========================
-  localStorage keys
-========================= */
-const LS_FAV  = "bible_fav_v1";       // [{id, code, name, nameE, ch, v, zh, en, ts}]
-const LS_READ = "bible_read_cut_v1";  // ["code/ch:v", ...] (以節為單位)
+/* ✅ 手機「節」固定可選 1~180 */
+const VERSE_SELECT_MAX = 180;
 
-/* =========================
-  DOM
-========================= */
 const elLang = document.getElementById("lang");
 const elTest = document.getElementById("testament");
+
 const elBook = document.getElementById("book");
-const elCh   = document.getElementById("chapter");
-const elV    = document.getElementById("verse");
-const elMaxCh= document.getElementById("maxCh");
+const bookBtn = document.getElementById("bookBtn");
+const bookBtnLabel = document.getElementById("bookBtnLabel");
+
+const elCh    = document.getElementById("chapter");     // input
+const elChSel = document.getElementById("chapterSel");  // select
+const elMaxCh = document.getElementById("maxCh");
+
+const elV     = document.getElementById("verse");       // input
+const elVSel  = document.getElementById("verseSel");    // select
 
 const elZh   = document.getElementById("zh");
 const elEn   = document.getElementById("en");
@@ -227,17 +411,14 @@ const btnFav    = document.getElementById("favBtn");
 const barFill  = document.getElementById("barFill");
 const barLabel = document.getElementById("barLabel");
 
-/* =========================
-  書卷資料
-  統一格式：
-  {Id, Code, Name, NameE, Chapters, Verses, Testament:"OT"/"NT"}
-========================= */
+const overlay = document.getElementById("overlay");
+const bookListEl = document.getElementById("bookList");
+const bookSearchEl = document.getElementById("bookSearch");
+const bookCloseBtn = document.getElementById("bookClose");
+
 let BOOKS_ALL = [];
 let BOOKS_BY_TEST = { OT: [], NT: [] };
 
-/* =========================
-  工具：localStorage
-========================= */
 function lsGet(key, fallback){
   try{
     const v = localStorage.getItem(key);
@@ -247,20 +428,12 @@ function lsGet(key, fallback){
 function lsSet(key, value){
   localStorage.setItem(key, JSON.stringify(value));
 }
-
-/* =========================
-  判斷舊約/新約（用 Id）
-  常見：1~39 舊約；40~66 新約
-========================= */
 function inferTestamentById(id){
   const n = Number(id);
   if(!Number.isFinite(n)) return "OT";
   return (n <= 39) ? "OT" : "NT";
 }
 
-/* =========================
-  載入 JSON 並建立下拉選單
-========================= */
 async function loadBooks(){
   const res = await fetch(BOOKS_URL, { cache:"no-store" });
   if(!res.ok) throw new Error("讀不到 BibleBooksData.json（路徑或伺服器設定）");
@@ -281,73 +454,118 @@ async function loadBooks(){
   BOOKS_BY_TEST.OT = BOOKS_ALL.filter(b => b.Testament === "OT");
   BOOKS_BY_TEST.NT = BOOKS_ALL.filter(b => b.Testament === "NT");
 
-  // 預設：如果 NT 有資料就選 NT，不然選 OT
   elTest.value = BOOKS_BY_TEST.NT.length ? "NT" : "OT";
 
-  rebuildBookOptions();
-}
+  const first = (BOOKS_BY_TEST[elTest.value] || [])[0];
+  elBook.value = first ? first.Code : (BOOKS_ALL[0]?.Code || "");
 
-/* =========================
-  依約重建書卷下拉
-========================= */
-function rebuildBookOptions(){
-  const t = elTest.value;
-  const list = BOOKS_BY_TEST[t] || [];
-  elBook.innerHTML = list.map(b => (
-    `<option value="${b.Code}" data-id="${b.Id}">${b.Name} / ${b.NameE}</option>`
-  )).join("");
+  // 預設 1章1節
+  elCh.value = 1;
+  elV.value = 1;
 
-  if(!list.length){
-    elBook.innerHTML = `<option value="luk">（此約無資料）</option>`;
-  }
+  buildVerseSelectOnce();
+  syncVerseToSelect();
 
-  // 選第一個後更新 meta
+  updateBookButtonLabel();
   updateMetaAndLimits();
   updateFavButton();
   updateReadRate();
+  rebuildBookPopupList();
 }
 
-/* =========================
-  取得目前選到的書卷物件
-========================= */
 function getSelectedBook(){
   const code = (elBook.value || "").toLowerCase();
   return BOOKS_ALL.find(b => b.Code === code) || null;
 }
+function updateBookButtonLabel(){
+  const b = getSelectedBook();
+  bookBtnLabel.textContent = b ? `${b.Name} / ${b.NameE}` : (elBook.value || "（無資料）");
+}
 
-/* =========================
-  限制章：1~Chapters
-========================= */
+/* ===== 章（手機 select） ===== */
+function rebuildChapterSelect(){
+  const b = getSelectedBook();
+  const max = Math.max(1, Number(b?.Chapters || 1));
+
+  let cur = Number(elCh.value || 1);
+  if(!Number.isFinite(cur) || cur < 1) cur = 1;
+  if(cur > max) cur = max;
+
+  if(elChSel.options.length !== max){
+    elChSel.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    for(let i=1;i<=max;i++){
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = String(i);
+      frag.appendChild(opt);
+    }
+    elChSel.appendChild(frag);
+  }
+
+  elCh.value = cur;
+  elChSel.value = String(cur);
+  elCh.max = max;
+  elMaxCh.textContent = String(max);
+}
+
 function clampChapter(){
   const b = getSelectedBook();
-  const max = b?.Chapters || 999;
+  const max = Math.max(1, Number(b?.Chapters || 1));
   let v = parseInt(elCh.value || "1", 10);
   if(!Number.isFinite(v) || v < 1) v = 1;
   if(v > max) v = max;
   elCh.value = v;
   elCh.max = max;
-  elMaxCh.textContent = (b?.Chapters ? b.Chapters : "—");
+  elMaxCh.textContent = String(max);
+  rebuildChapterSelect();
 }
 
-/* =========================
-  顯示 meta
-========================= */
+/* ===== ✅ 節（手機 select，固定 1~180） ===== */
+function buildVerseSelectOnce(){
+  if(elVSel.options.length === VERSE_SELECT_MAX) return;
+  elVSel.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  for(let i=1;i<=VERSE_SELECT_MAX;i++){
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = String(i);
+    frag.appendChild(opt);
+  }
+  elVSel.appendChild(frag);
+}
+
+function clampVerse(){
+  let v = parseInt(elV.value || "1", 10);
+  if(!Number.isFinite(v) || v < 1) v = 1;
+  if(v > VERSE_SELECT_MAX) v = VERSE_SELECT_MAX;
+  elV.value = v;
+  syncVerseToSelect();
+}
+
+function syncVerseToSelect(){
+  buildVerseSelectOnce();
+  let v = parseInt(elV.value || "1", 10);
+  if(!Number.isFinite(v) || v < 1) v = 1;
+  if(v > VERSE_SELECT_MAX) v = VERSE_SELECT_MAX;
+  elVSel.value = String(v);
+}
+
 function updateMetaAndLimits(){
-  clampChapter();
   const b = getSelectedBook();
   const code = b?.Code || elBook.value;
   const name = b?.Name || "";
   const nameE = b?.NameE || "";
   const verses = b?.Verses || 0;
-  const chMax = b?.Chapters || 0;
+  const chMax = Math.max(1, Number(b?.Chapters || 1));
 
   elMeta.textContent =
     `${name} ${nameE} ｜ Code: ${code} ｜ Chapters: ${chMax || "—"} ｜ Verses: ${verses || "—"}`;
+
+  rebuildChapterSelect();
+  clampVerse(); // 仍固定 1~180
 }
 
-/* =========================
-  顯示錯誤
-========================= */
 function showError(msg){
   elErr.style.display = "block";
   elErr.textContent = msg;
@@ -357,19 +575,11 @@ function hideError(){
   elErr.textContent = "";
 }
 
-/* =========================
-  解析 ibibles 回傳 HTML
-========================= */
 function parseIbiblesFirstVerse(html){
-  // <small>3</small> ... <br>
   const re = /<small>([^<]+)<\/small>\s*([^<]+)<br>/;
   const m = html.match(re);
   return m ? (m[2] || "").trim() : null;
 }
-
-/* =========================
-  A 方案：CORS proxy (allorigins)
-========================= */
 async function fetchVerseViaProxy(lang, bookCode, ch, v){
   const target = `https://ibibles.net/quote.php?${lang}-${bookCode}/${ch}:${v}`;
   const url = "https://api.allorigins.win/raw?url=" + encodeURIComponent(target);
@@ -379,9 +589,6 @@ async function fetchVerseViaProxy(lang, bookCode, ch, v){
   return parseIbiblesFirstVerse(html);
 }
 
-/* =========================
-  Key（以節為單位）
-========================= */
 function verseKey(){
   const code = (elBook.value || "").toLowerCase();
   const ch = Math.max(1, parseInt(elCh.value || "1", 10));
@@ -389,9 +596,7 @@ function verseKey(){
   return `${code}/${ch}:${v}`;
 }
 
-/* =========================
-  收藏
-========================= */
+/* 收藏 */
 function getFavList(){ return lsGet(LS_FAV, []); }
 function isFavorited(){
   const id = verseKey();
@@ -399,13 +604,8 @@ function isFavorited(){
 }
 function updateFavButton(){
   const yes = isFavorited();
-  if(yes){
-    btnFav.disabled = true;
-    btnFav.textContent = "已收藏";
-  }else{
-    btnFav.disabled = false;
-    btnFav.textContent = "加入收藏";
-  }
+  btnFav.disabled = yes;
+  btnFav.textContent = yes ? "已收藏" : "加入收藏";
 }
 btnFav.addEventListener("click", () => {
   if(btnFav.disabled) return;
@@ -431,19 +631,14 @@ btnFav.addEventListener("click", () => {
   alert("已加入收藏（localStorage）");
 });
 
-/* =========================
-  閱讀率（只算目前書卷）
-  讀取：LS_READ 裡是 ["code/ch:v"]
-========================= */
+/* 閱讀率 */
 function getReadSet(){ return new Set(lsGet(LS_READ, [])); }
 function saveReadSet(set){ lsSet(LS_READ, Array.from(set)); }
-
 function markRead(){
   const set = getReadSet();
   set.add(verseKey());
   saveReadSet(set);
 }
-
 function updateReadRate(){
   const b = getSelectedBook();
   const code = (b?.Code || elBook.value || "").toLowerCase();
@@ -455,22 +650,19 @@ function updateReadRate(){
     if(k.startsWith(code + "/")) count++;
   }
 
-  // 若沒有 total，就只顯示 0%
   let pct = 0;
   if(total > 0){
     pct = Math.max(0, Math.min(100, Math.round((count / total) * 100)));
   }
-
   barFill.style.width = pct + "%";
   barLabel.textContent = pct + "%";
 }
 
-/* =========================
-  搜尋（中英）
-========================= */
+/* 搜尋 */
 async function searchBible(){
   hideError();
-  updateMetaAndLimits();
+  clampChapter();
+  clampVerse();
 
   const b = getSelectedBook();
   const bookCode = (b?.Code || elBook.value || "").toLowerCase();
@@ -495,8 +687,6 @@ async function searchBible(){
         return;
       }
       elZh.textContent = zh;
-
-      // ✅ 只有中文成功才記閱讀
       markRead();
     }else{
       elZh.textContent = "";
@@ -516,35 +706,127 @@ async function searchBible(){
   }
 }
 
-/* =========================
-  事件：變更選單/章節時
-========================= */
-elTest.addEventListener("change", () => {
-  rebuildBookOptions();
+/* ===== 書卷彈窗 ===== */
+function currentBookList(){
+  const t = elTest.value;
+  return BOOKS_BY_TEST[t] || [];
+}
+function rebuildBookPopupList(filterText=""){
+  const list = currentBookList();
+  const q = (filterText || "").trim().toLowerCase();
+
+  const filtered = !q ? list : list.filter(b => {
+    const s = `${b.Name} ${b.NameE} ${b.Code}`.toLowerCase();
+    return s.includes(q);
+  });
+
+  if(!filtered.length){
+    bookListEl.innerHTML = `<div style="padding:14px;color:rgba(255,255,255,.75);font-weight:900;">找不到符合的書卷</div>`;
+    return;
+  }
+
+  bookListEl.innerHTML = filtered.map(b => {
+    const isNow = (b.Code === (elBook.value||"").toLowerCase());
+    return `
+      <div class="bookItem" data-code="${b.Code}">
+        <div class="names">
+          <div class="zh">${isNow ? "✅ " : ""}${escapeHtml(b.Name)}</div>
+          <div class="en">${escapeHtml(b.NameE)} · Code: ${escapeHtml(b.Code)}</div>
+        </div>
+        <div class="badge">${b.Chapters || "—"} 章</div>
+      </div>
+    `;
+  }).join("");
+}
+function openBookPopup(){
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden","false");
+  bookBtn.setAttribute("aria-expanded","true");
+  bookSearchEl.value = "";
+  rebuildBookPopupList("");
+  bookSearchEl.focus({preventScroll:true});
+}
+function closeBookPopup(){
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden","true");
+  bookBtn.setAttribute("aria-expanded","false");
+}
+overlay.addEventListener("click", (e) => { if(e.target === overlay) closeBookPopup(); });
+bookCloseBtn.addEventListener("click", closeBookPopup);
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape" && overlay.classList.contains("show")) closeBookPopup();
 });
-elBook.addEventListener("change", () => {
+bookBtn.addEventListener("click", openBookPopup);
+bookSearchEl.addEventListener("input", () => rebuildBookPopupList(bookSearchEl.value));
+bookListEl.addEventListener("click", (e) => {
+  const item = e.target.closest(".bookItem");
+  if(!item) return;
+  const code = (item.getAttribute("data-code") || "").toLowerCase();
+  if(!code) return;
+
+  elBook.value = code;
+
+  // 換書卷回到 1章1節
+  elCh.value = 1;
+  elV.value = 1;
+  syncVerseToSelect();
+
+  updateBookButtonLabel();
   updateMetaAndLimits();
   updateFavButton();
   updateReadRate();
+  closeBookPopup();
 });
-elCh.addEventListener("input", () => {
+
+function escapeHtml(str){
+  return String(str ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* 事件：約切換 */
+elTest.addEventListener("change", () => {
+  const first = (BOOKS_BY_TEST[elTest.value] || [])[0];
+  if(first) elBook.value = first.Code;
+
+  elCh.value = 1;
+  elV.value = 1;
+  syncVerseToSelect();
+
+  updateBookButtonLabel();
+  updateMetaAndLimits();
+  updateFavButton();
+  updateReadRate();
+  rebuildBookPopupList("");
+});
+
+/* 章：桌機 input 改變時，同步 select */
+elCh.addEventListener("input", clampChapter);
+elCh.addEventListener("change", clampChapter);
+/* 章：手機 select 改變時，同步 input */
+elChSel.addEventListener("change", () => {
+  elCh.value = parseInt(elChSel.value || "1", 10) || 1;
   clampChapter();
 });
-elCh.addEventListener("change", () => {
-  clampChapter();
+
+/* ✅ 節：桌機 input 改變時，同步手機 select */
+elV.addEventListener("input", clampVerse);
+elV.addEventListener("change", clampVerse);
+/* ✅ 節：手機 select 改變時，同步桌機 input */
+elVSel.addEventListener("change", () => {
+  elV.value = parseInt(elVSel.value || "1", 10) || 1;
+  clampVerse();
 });
+
 btnSearch.addEventListener("click", searchBible);
 
-/* =========================
-  啟動
-========================= */
+/* 啟動 */
 (async function boot(){
   try{
     await loadBooks();
-    updateMetaAndLimits();
-    updateFavButton();
-    updateReadRate();
-    // 預設載入一筆
     searchBible();
   }catch(e){
     showError(String(e?.message || e));
